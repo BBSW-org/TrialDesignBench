@@ -2,7 +2,7 @@
 site_name = "trialdesignbench"
 site_description = "Benchmark for evaluating AI agents clinical trial design"
 site_author = "trialdesignbench authors"
-site_url = "https://bbsw-org.github.io/trialdesignbench/"
+site_url = "https://bbsw-org.github.io/TrialDesignBench/"
 repo_url = "https://github.com/BBSW-org/TrialDesignBench"
 repo_name = "BBSW-org/TrialDesignBench"
 edit_uri = "edit/main/docs/"
