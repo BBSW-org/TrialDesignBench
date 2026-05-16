@@ -1,4 +1,4 @@
-# trialdesignbench <img src="https://github.com/BBSW-org/TrialDesignBench/raw/main/docs/assets/logo.svg" align="right" width="120" />
+# trialdesignbench <img src="assets/logo.svg" align="right" width="120" />
 
 [![PyPI version](https://img.shields.io/pypi/v/trialdesignbench)](https://pypi.org/project/trialdesignbench/)
 ![Python versions](https://img.shields.io/pypi/pyversions/trialdesignbench)
