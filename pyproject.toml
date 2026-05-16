@@ -3,7 +3,12 @@ name = "trialdesignbench"
 version = "0.1.0"
 description = "Evaluate whether AI agents can create efficient, reproducible, and safe clinical trial design"
 authors = [{ name = "Nan Xiao", email = "me@nanx.me" }]
-dependencies = ["pydantic>=2.13.4", "tqdm>=4.67.3"]
+dependencies = [
+    "pydantic>=2.13.4",
+    "python-dotenv>=1.2.2",
+    "tqdm>=4.67.3",
+    "typer>=0.25.1",
+]
 readme = "README.md"
 
 classifiers = [
