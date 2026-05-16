@@ -1,0 +1,3 @@
+# Cases
+
+::: trialdesignbench.cases
