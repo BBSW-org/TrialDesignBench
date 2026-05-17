@@ -519,7 +519,7 @@ wheels = [
 [[package]]
 name = "openai-codex"
 version = "0.131.0a4"
-source = { git = "https://github.com/openai/codex.git?subdirectory=sdk%2Fpython#0445b290fe0b6f1c8d13863af4b27202aca09005" }
+source = { git = "https://github.com/openai/codex.git?subdirectory=sdk%2Fpython#4c897723142406baf3c5f6f8730f2844ef1aa436" }
 dependencies = [
     { name = "openai-codex-cli-bin" },
     { name = "pydantic" },
@@ -978,7 +978,7 @@ wheels = [
 
 [[package]]
 name = "trialdesignbench"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "openai-codex" },
