@@ -8,30 +8,47 @@
 [![Documentation](https://github.com/BBSW-org/TrialDesignBench/actions/workflows/docs.yml/badge.svg)](https://bbsw-org.github.io/TrialDesignBench/)
 ![License](https://img.shields.io/pypi/l/trialdesignbench)
 
-TBA
+TrialDesignBench provides tooling for evaluating whether AI agents can reproduce
+clinical trial designs from Statistical Analysis Plans and protocols.
+
+This baseline implements workflow step 1:
+
+1. Create a local benchmark workspace.
+2. Convert a SAP/protocol PDF to Mathpix Markdown, with optional LaTeX ZIP output.
+3. Build the standard TrialDesignBench reproduction prompt.
+4. Run the prompt against a locally installed Codex SDK/runtime and save the run artifacts.
 
 ## Installation
 
-You can install trialdesignbench from PyPI:
-
 ```bash
-pip install trialdesignbench
+uv add trialdesignbench
 ```
 
-If your project is managed with `uv`, add it as a dev dependency:
-
-```bash
-uv add --dev trialdesignbench
-```
-
-Or install the development version from GitHub:
+For development:
 
 ```bash
 git clone https://github.com/BBSW-org/TrialDesignBench.git
 cd TrialDesignBench
-python3 -m pip install -e .
+uv sync
 ```
 
-## Quick start
+If you want to execute local Codex runs, install the experimental Codex Python
+SDK in the same environment.
 
-TBA
+## Quick Start
+
+```bash
+uv run tdb init tdb-workspace
+uv run tdb configure --workspace tdb-workspace
+uv run tdb run path/to/sap.pdf --workspace tdb-workspace --case-id tdb-001
+```
+
+Use `--no-codex` to exercise only the Mathpix ingestion portion:
+
+```bash
+uv run tdb run path/to/sap.pdf --workspace tdb-workspace --no-codex
+```
+
+The workspace `.env` file stores `MATHPIX_APP_ID`, `MATHPIX_APP_KEY`,
+`CODEX_MODEL`, and optionally `CODEX_BIN`. The generated workspace `.gitignore`
+excludes credentials and output artifacts by default.
