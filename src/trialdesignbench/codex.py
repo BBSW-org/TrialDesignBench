@@ -40,6 +40,7 @@ class LocalCodexRunner:
         codex_bin: str | None = None,
         effort: str = DEFAULT_CODEX_EFFORT,
     ) -> CodexRunArtifact:
+        openai_codex = _load_openai_codex()
         run_dir = run_directory.expanduser().resolve()
         run_dir.mkdir(parents=True, exist_ok=True)
         prompt_path = run_dir / "prompt.md"
@@ -47,7 +48,6 @@ class LocalCodexRunner:
         metadata_path = run_dir / "codex_run.json"
         prompt_path.write_text(prompt, encoding="utf-8")
 
-        openai_codex = _load_openai_codex()
         config = None
         if codex_bin:
             config = openai_codex.AppServerConfig(

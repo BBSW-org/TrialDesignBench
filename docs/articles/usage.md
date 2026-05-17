@@ -36,6 +36,12 @@ uv run tdb convert path/to/sap.pdf --workspace tdb-workspace
 Add `--save-tex-zip` to request Mathpix's LaTeX ZIP conversion in addition to
 the Mathpix Markdown text.
 
+TrialDesignBench reuses existing non-empty `converted/<pdf-stem>.mmd` and
+`converted/<pdf-stem>.mathpix.json` files by default. Add `--force` when you
+need to submit the PDF to Mathpix again. Use `--http-timeout` to raise the
+per-request HTTP timeout for large uploads or slow connections; `--timeout`
+continues to control the overall Mathpix polling deadline.
+
 ## Convert and run Codex
 
 ```bash
@@ -53,3 +59,7 @@ The command saves:
 
 Use `--no-codex` when you only want to test ingestion while still using the same
 output layout.
+
+If the Codex step fails after conversion, the pipeline still writes
+`runs/<case-id>.step1.json` with the conversion artifact and `codex_run` set to
+`null`, so the workspace state remains inspectable before retrying.

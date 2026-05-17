@@ -14,6 +14,7 @@ from trialdesignbench.config import (
 )
 from trialdesignbench.config import configure_workspace as write_workspace_config
 from trialdesignbench.config import create_workspace, load_config
+from trialdesignbench.mathpix import DEFAULT_HTTP_TIMEOUT_SECONDS
 from trialdesignbench.pipeline import StepOnePipeline
 
 app = typer.Typer(
@@ -93,6 +94,20 @@ def convert(
         float,
         typer.Option("--timeout", help="Maximum seconds to wait for Mathpix."),
     ] = 600.0,
+    http_timeout: Annotated[
+        float,
+        typer.Option(
+            "--http-timeout",
+            help="Per-request Mathpix HTTP timeout in seconds.",
+        ),
+    ] = DEFAULT_HTTP_TIMEOUT_SECONDS,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            help="Re-run Mathpix conversion even when converted artifacts exist.",
+        ),
+    ] = False,
 ) -> None:
     """Convert one SAP/protocol PDF to Mathpix Markdown."""
     pipeline = StepOnePipeline(load_config(workspace))
@@ -101,6 +116,8 @@ def convert(
         save_tex_zip=save_tex_zip,
         poll_interval_seconds=poll_interval,
         timeout_seconds=timeout,
+        http_timeout_seconds=http_timeout,
+        force=force,
     )
     typer.echo(f"Converted text: {artifact.text_path}")
     typer.echo(f"Mathpix metadata: {artifact.metadata_path}")
@@ -152,6 +169,20 @@ def run(
         float,
         typer.Option("--timeout", help="Maximum seconds to wait for Mathpix."),
     ] = 600.0,
+    http_timeout: Annotated[
+        float,
+        typer.Option(
+            "--http-timeout",
+            help="Per-request Mathpix HTTP timeout in seconds.",
+        ),
+    ] = DEFAULT_HTTP_TIMEOUT_SECONDS,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            help="Re-run Mathpix conversion even when converted artifacts exist.",
+        ),
+    ] = False,
 ) -> None:
     """Convert a PDF and run the standard reproduction prompt with local Codex."""
     pipeline = StepOnePipeline(load_config(workspace))
@@ -165,6 +196,8 @@ def run(
         effort=effort,
         poll_interval_seconds=poll_interval,
         timeout_seconds=timeout,
+        http_timeout_seconds=http_timeout,
+        force=force,
     )
     typer.echo(f"Converted text: {result.conversion.text_path}")
     if result.codex_run:

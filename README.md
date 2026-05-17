@@ -60,3 +60,7 @@ The workspace `.env` file stores `MATHPIX_APP_ID`, `MATHPIX_APP_KEY`,
 `CODEX_MODEL`, and optionally `CODEX_BIN`. The default Codex model is
 `gpt-5.5`, and the default reasoning effort is `high`. The generated workspace
 `.gitignore` excludes credentials and output artifacts by default.
+
+Converted Mathpix artifacts are reused by default on retry. Add `--force` to
+submit the PDF again, or `--http-timeout` to increase the per-request Mathpix
+HTTP timeout for large uploads.
