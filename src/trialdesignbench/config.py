@@ -10,7 +10,8 @@ from dotenv import dotenv_values, load_dotenv, set_key
 
 DEFAULT_WORKSPACE_NAME = "tdb-workspace"
 ENV_FILENAME = ".env"
-DEFAULT_CODEX_MODEL = "gpt-5.4"
+DEFAULT_CODEX_MODEL = "gpt-5.5"
+DEFAULT_CODEX_EFFORT = "high"
 
 
 @dataclass(frozen=True, slots=True)

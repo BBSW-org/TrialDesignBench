@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
+from trialdesignbench.config import DEFAULT_CODEX_EFFORT
 from trialdesignbench.models import CodexRunArtifact
 
 
@@ -21,7 +22,7 @@ class CodexRunner(Protocol):
         run_directory: Path,
         model: str,
         codex_bin: str | None = None,
-        effort: str = "high",
+        effort: str = DEFAULT_CODEX_EFFORT,
     ) -> CodexRunArtifact:
         """Run Codex and return persisted artifacts."""
 
@@ -37,7 +38,7 @@ class LocalCodexRunner:
         run_directory: Path,
         model: str,
         codex_bin: str | None = None,
-        effort: str = "high",
+        effort: str = DEFAULT_CODEX_EFFORT,
     ) -> CodexRunArtifact:
         run_dir = run_directory.expanduser().resolve()
         run_dir.mkdir(parents=True, exist_ok=True)
@@ -92,8 +93,9 @@ def _load_openai_codex() -> Any:
     except ImportError as exc:
         msg = (
             "The OpenAI Codex Python SDK is not installed in this environment. "
-            "Install the local SDK, for example from the Codex repository with "
-            "`uv pip install -e sdk/python`, then retry the command."
+            "Run `uv sync` from a TrialDesignBench checkout, or add the SDK with "
+            '`uv add "openai-codex @ '
+            'git+https://github.com/openai/codex.git#subdirectory=sdk/python"`.'
         )
         raise RuntimeError(msg) from exc
 

@@ -7,7 +7,11 @@ from typing import Annotated
 
 import typer
 
-from trialdesignbench.config import DEFAULT_CODEX_MODEL, DEFAULT_WORKSPACE_NAME
+from trialdesignbench.config import (
+    DEFAULT_CODEX_EFFORT,
+    DEFAULT_CODEX_MODEL,
+    DEFAULT_WORKSPACE_NAME,
+)
 from trialdesignbench.config import configure_workspace as write_workspace_config
 from trialdesignbench.config import create_workspace, load_config
 from trialdesignbench.pipeline import StepOnePipeline
@@ -139,7 +143,7 @@ def run(
     effort: Annotated[
         str,
         typer.Option("--effort", help="Codex reasoning effort."),
-    ] = "high",
+    ] = DEFAULT_CODEX_EFFORT,
     poll_interval: Annotated[
         float,
         typer.Option("--poll-interval", help="Seconds between Mathpix status checks."),

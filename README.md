@@ -32,8 +32,15 @@ cd TrialDesignBench
 uv sync
 ```
 
-If you want to execute local Codex runs, install the experimental Codex Python
-SDK in the same environment.
+The experimental Codex Python SDK is declared as a Git source dependency for
+`uv` environments until it is published on PyPI. From a clone of this
+repository, `uv sync` installs both `openai-codex` and its pinned local runtime.
+For PyPI-only installs before `openai-codex` is published on PyPI, add the SDK
+source explicitly in the consuming project:
+
+```bash
+uv add "openai-codex @ git+https://github.com/openai/codex.git#subdirectory=sdk/python"
+```
 
 ## Quick Start
 
@@ -50,5 +57,6 @@ uv run tdb run path/to/sap.pdf --workspace tdb-workspace --no-codex
 ```
 
 The workspace `.env` file stores `MATHPIX_APP_ID`, `MATHPIX_APP_KEY`,
-`CODEX_MODEL`, and optionally `CODEX_BIN`. The generated workspace `.gitignore`
-excludes credentials and output artifacts by default.
+`CODEX_MODEL`, and optionally `CODEX_BIN`. The default Codex model is
+`gpt-5.5`, and the default reasoning effort is `high`. The generated workspace
+`.gitignore` excludes credentials and output artifacts by default.

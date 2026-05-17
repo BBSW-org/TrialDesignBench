@@ -50,5 +50,6 @@ uv run tdb run path/to/sap.pdf --workspace tdb-workspace --no-codex
 ```
 
 The workspace `.env` file stores `MATHPIX_APP_ID`, `MATHPIX_APP_KEY`,
-`CODEX_MODEL`, and optionally `CODEX_BIN`. The generated workspace `.gitignore`
-excludes credentials and output artifacts by default.
+`CODEX_MODEL`, and optionally `CODEX_BIN`. The default Codex model is
+`gpt-5.5`, and the default reasoning effort is `high`. The generated workspace
+`.gitignore` excludes credentials and output artifacts by default.

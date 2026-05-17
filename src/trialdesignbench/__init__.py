@@ -4,6 +4,8 @@ from importlib.metadata import PackageNotFoundError, version
 
 from trialdesignbench.codex import CodexRunner, LocalCodexRunner
 from trialdesignbench.config import (
+    DEFAULT_CODEX_EFFORT,
+    DEFAULT_CODEX_MODEL,
     TdbConfig,
     configure_workspace,
     create_workspace,
@@ -23,6 +25,8 @@ __all__ = [
     "CodexRunArtifact",
     "CodexRunner",
     "ConversionArtifact",
+    "DEFAULT_CODEX_EFFORT",
+    "DEFAULT_CODEX_MODEL",
     "LocalCodexRunner",
     "MathpixClient",
     "MathpixError",

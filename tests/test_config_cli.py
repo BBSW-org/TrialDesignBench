@@ -6,7 +6,12 @@ import pytest
 from typer.testing import CliRunner
 
 from trialdesignbench.cli import app
-from trialdesignbench.config import configure_workspace, create_workspace, load_config
+from trialdesignbench.config import (
+    DEFAULT_CODEX_MODEL,
+    configure_workspace,
+    create_workspace,
+    load_config,
+)
 
 
 def test_create_and_load_workspace_config(
@@ -46,4 +51,7 @@ def test_cli_init_creates_workspace(tmp_path: Path) -> None:
     assert result.exit_code == 0
     assert (workspace / ".env").exists()
     assert (workspace / "converted").is_dir()
+    assert f"CODEX_MODEL={DEFAULT_CODEX_MODEL}" in (workspace / ".env").read_text(
+        encoding="utf-8"
+    )
     assert str(workspace.resolve()) in result.stdout

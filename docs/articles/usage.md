@@ -24,7 +24,8 @@ uv run tdb configure --workspace tdb-workspace
 ```
 
 This writes `MATHPIX_APP_ID`, `MATHPIX_APP_KEY`, `CODEX_MODEL`, and optionally
-`CODEX_BIN` to `tdb-workspace/.env`.
+`CODEX_BIN` to `tdb-workspace/.env`. The default model is `gpt-5.5`; Codex runs
+default to high reasoning effort.
 
 ## Convert only
 

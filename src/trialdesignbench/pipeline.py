@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Protocol
 
 from trialdesignbench.codex import CodexRunner, LocalCodexRunner
-from trialdesignbench.config import TdbConfig
+from trialdesignbench.config import DEFAULT_CODEX_EFFORT, TdbConfig
 from trialdesignbench.mathpix import MathpixClient
 from trialdesignbench.models import CodexRunArtifact, ConversionArtifact, StepOneResult
 from trialdesignbench.prompt import build_reproduction_prompt
@@ -67,7 +67,7 @@ class StepOnePipeline:
         save_tex_zip: bool = False,
         model: str | None = None,
         codex_bin: str | None = None,
-        effort: str = "high",
+        effort: str = DEFAULT_CODEX_EFFORT,
         poll_interval_seconds: float = 5.0,
         timeout_seconds: float = 600.0,
     ) -> StepOneResult:

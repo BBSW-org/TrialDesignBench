@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Evaluate whether AI agents can create efficient, reproducible, and safe clinical trial design"
 authors = [{ name = "Nan Xiao", email = "me@nanx.me" }]
 dependencies = [
+    "openai-codex",
     "pydantic>=2.13.4",
     "python-dotenv>=1.2.2",
     "tqdm>=4.67.3",
@@ -59,6 +60,9 @@ exclude = ["vendor/"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 norecursedirs = [".venv", "vendor"]
+
+[tool.uv.sources]
+openai-codex = { git = "https://github.com/openai/codex.git", subdirectory = "sdk/python" }
 
 [dependency-groups]
 dev = [

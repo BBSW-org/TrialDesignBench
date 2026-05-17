@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pypdf import PdfWriter
 
-from trialdesignbench.config import TdbConfig
+from trialdesignbench.config import DEFAULT_CODEX_EFFORT, TdbConfig
 from trialdesignbench.models import CodexRunArtifact, ConversionArtifact
 from trialdesignbench.pipeline import StepOnePipeline
 
@@ -39,6 +39,7 @@ class FakeConverter:
 class FakeCodexRunner:
     def __init__(self) -> None:
         self.prompt = ""
+        self.effort = ""
 
     def run(
         self,
@@ -47,10 +48,11 @@ class FakeCodexRunner:
         run_directory: Path,
         model: str,
         codex_bin: str | None = None,
-        effort: str = "high",
+        effort: str = DEFAULT_CODEX_EFFORT,
     ) -> CodexRunArtifact:
-        del codex_bin, effort
+        del codex_bin
         self.prompt = prompt
+        self.effort = effort
         run_directory.mkdir(parents=True, exist_ok=True)
         prompt_path = run_directory / "prompt.md"
         response_path = run_directory / "codex_response.md"
@@ -96,6 +98,7 @@ def test_step_one_pipeline_writes_conversion_and_codex_artifacts(
     assert result.conversion.text_path.exists()
     assert result.codex_run is not None
     assert result.codex_run.model == "gpt-test"
+    assert codex_runner.effort == DEFAULT_CODEX_EFFORT
     assert "The target sample size is 120 participants." in codex_runner.prompt
     assert "reproduce_design.R" in codex_runner.prompt
     assert (config.workspace / "runs" / "case-001.step1.json").exists()
