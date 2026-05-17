@@ -32,8 +32,15 @@ cd TrialDesignBench
 uv sync
 ```
 
-If you want to execute local Codex runs, install the experimental Codex Python
-SDK in the same environment.
+The experimental Codex Python SDK is declared as a Git source dependency for
+`uv` environments until it is published on PyPI. From a clone of this
+repository, `uv sync` installs both `openai-codex` and its pinned local runtime.
+For PyPI-only installs before `openai-codex` is published on PyPI, add the SDK
+source explicitly in the consuming project:
+
+```bash
+uv add "openai-codex @ git+https://github.com/openai/codex.git#subdirectory=sdk/python"
+```
 
 ## Quick Start
 
