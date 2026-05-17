@@ -11,10 +11,20 @@ workspace.
 | `CODEX_MODEL` | No | Local Codex model name. Defaults to `gpt-5.5`. |
 | `CODEX_BIN` | No | Path to a specific local `codex` binary. |
 
+Values in the selected workspace `.env` file are authoritative. Shell
+environment variables with the same names do not override workspace
+configuration, which keeps multiple benchmark workspaces independent when they
+are run from the same shell.
+
 The Mathpix credentials are sent as `app_id` and `app_key` headers for PDF
 upload, status polling, and result download. PDF processing is asynchronous:
 TrialDesignBench uploads the file, polls until completion, then downloads the
 `.mmd` result and optional `.tex.zip` conversion.
+
+`tdb convert` and `tdb run` expose two Mathpix timeout controls:
+`--http-timeout` sets the per-request HTTP timeout for uploads, polling
+requests, and downloads, while `--timeout` sets the overall polling deadline for
+the asynchronous Mathpix job.
 
 The Codex SDK integration uses the GitHub-hosted `openai-codex` Python package
 declared in `pyproject.toml` for `uv` environments. The default reproduction run
