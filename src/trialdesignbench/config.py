@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from dotenv import dotenv_values, load_dotenv, set_key
+from dotenv import dotenv_values, set_key
 
 DEFAULT_WORKSPACE_NAME = "tdb-workspace"
 ENV_FILENAME = ".env"
@@ -93,10 +92,9 @@ def load_config(workspace: Path) -> TdbConfig:
         raise FileNotFoundError(msg)
 
     values = dotenv_values(env_file)
-    load_dotenv(env_file, override=False)
 
-    app_id = os.environ.get("MATHPIX_APP_ID") or values.get("MATHPIX_APP_ID") or ""
-    app_key = os.environ.get("MATHPIX_APP_KEY") or values.get("MATHPIX_APP_KEY") or ""
+    app_id = values.get("MATHPIX_APP_ID") or ""
+    app_key = values.get("MATHPIX_APP_KEY") or ""
     if not app_id or not app_key:
         msg = (
             "Missing Mathpix credentials. Set MATHPIX_APP_ID and MATHPIX_APP_KEY "
@@ -104,12 +102,8 @@ def load_config(workspace: Path) -> TdbConfig:
         )
         raise ValueError(msg)
 
-    codex_model = (
-        os.environ.get("CODEX_MODEL")
-        or values.get("CODEX_MODEL")
-        or DEFAULT_CODEX_MODEL
-    )
-    codex_bin = os.environ.get("CODEX_BIN") or values.get("CODEX_BIN")
+    codex_model = values.get("CODEX_MODEL") or DEFAULT_CODEX_MODEL
+    codex_bin = values.get("CODEX_BIN") or None
     return TdbConfig(
         workspace=resolved,
         env_file=env_file,

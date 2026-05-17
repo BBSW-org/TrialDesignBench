@@ -9,7 +9,7 @@ from typing import Protocol
 
 from trialdesignbench.codex import CodexRunner, LocalCodexRunner
 from trialdesignbench.config import DEFAULT_CODEX_EFFORT, TdbConfig
-from trialdesignbench.mathpix import MathpixClient
+from trialdesignbench.mathpix import DEFAULT_HTTP_TIMEOUT_SECONDS, MathpixClient
 from trialdesignbench.models import CodexRunArtifact, ConversionArtifact, StepOneResult
 from trialdesignbench.prompt import build_reproduction_prompt
 
@@ -44,15 +44,35 @@ class StepOnePipeline:
         save_tex_zip: bool = False,
         poll_interval_seconds: float = 5.0,
         timeout_seconds: float = 600.0,
+        http_timeout_seconds: float = DEFAULT_HTTP_TIMEOUT_SECONDS,
+        force: bool = False,
     ) -> ConversionArtifact:
         """Convert a SAP/protocol PDF into Mathpix Markdown."""
+        source_pdf = pdf_path.expanduser().resolve()
+        if not source_pdf.exists():
+            raise FileNotFoundError(source_pdf)
+        if source_pdf.suffix.lower() != ".pdf":
+            msg = f"Expected a PDF file, got: {source_pdf}"
+            raise ValueError(msg)
+
+        output_dir = (self.config.workspace / "converted").expanduser().resolve()
+        if not force:
+            existing = _load_existing_conversion(
+                source_pdf,
+                output_dir,
+                require_tex_zip=save_tex_zip,
+            )
+            if existing is not None:
+                return existing
+
         converter = self.converter or MathpixClient(
             app_id=self.config.mathpix_app_id,
             app_key=self.config.mathpix_app_key,
+            http_timeout_seconds=http_timeout_seconds,
         )
         return converter.convert_pdf(
-            pdf_path,
-            self.config.workspace / "converted",
+            source_pdf,
+            output_dir,
             save_tex_zip=save_tex_zip,
             poll_interval_seconds=poll_interval_seconds,
             timeout_seconds=timeout_seconds,
@@ -70,6 +90,8 @@ class StepOnePipeline:
         effort: str = DEFAULT_CODEX_EFFORT,
         poll_interval_seconds: float = 5.0,
         timeout_seconds: float = 600.0,
+        http_timeout_seconds: float = DEFAULT_HTTP_TIMEOUT_SECONDS,
+        force: bool = False,
     ) -> StepOneResult:
         """Run workflow step 1 for one SAP/protocol PDF."""
         conversion = self.convert(
@@ -77,8 +99,11 @@ class StepOnePipeline:
             save_tex_zip=save_tex_zip,
             poll_interval_seconds=poll_interval_seconds,
             timeout_seconds=timeout_seconds,
+            http_timeout_seconds=http_timeout_seconds,
+            force=force,
         )
         codex_run: CodexRunArtifact | None = None
+        result_path = self._result_path(conversion, case_id=case_id)
 
         if run_codex:
             prompt = build_reproduction_prompt(
@@ -88,16 +113,22 @@ class StepOnePipeline:
             )
             run_dir = self._run_directory(conversion, case_id=case_id)
             runner = self.codex_runner or LocalCodexRunner()
-            codex_run = runner.run(
-                prompt=prompt,
-                run_directory=run_dir,
-                model=model or self.config.codex_model,
-                codex_bin=codex_bin or self.config.codex_bin,
-                effort=effort,
-            )
+            try:
+                codex_run = runner.run(
+                    prompt=prompt,
+                    run_directory=run_dir,
+                    model=model or self.config.codex_model,
+                    codex_bin=codex_bin or self.config.codex_bin,
+                    effort=effort,
+                )
+            except Exception:
+                result = StepOneResult(conversion=conversion, codex_run=None)
+                result_path.write_text(
+                    result.model_dump_json(indent=2), encoding="utf-8"
+                )
+                raise
 
         result = StepOneResult(conversion=conversion, codex_run=codex_run)
-        result_path = self._result_path(conversion, case_id=case_id)
         result_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
         return result
 
@@ -114,7 +145,66 @@ class StepOnePipeline:
         return run_root / f"{case_id or conversion.pdf_path.stem}.step1.json"
 
 
-def write_result_summary(result: StepOneResult, path: Path) -> None:
-    """Write a compact JSON summary for scripts that need a stable artifact."""
-    payload = result.model_dump(mode="json")
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+def _load_existing_conversion(
+    pdf_path: Path, output_dir: Path, *, require_tex_zip: bool
+) -> ConversionArtifact | None:
+    stem = pdf_path.stem
+    text_path = output_dir / f"{stem}.mmd"
+    metadata_path = output_dir / f"{stem}.mathpix.json"
+    if not _non_empty_file(text_path) or not _non_empty_file(metadata_path):
+        return None
+
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(metadata, dict):
+        return None
+
+    metadata_pdf_path = metadata.get("pdf_path")
+    if metadata_pdf_path is not None:
+        try:
+            if Path(str(metadata_pdf_path)).expanduser().resolve() != pdf_path:
+                return None
+        except OSError:
+            return None
+
+    pdf_id = metadata.get("pdf_id")
+    if not isinstance(pdf_id, str) or not pdf_id:
+        return None
+
+    status = metadata.get("status")
+    if not isinstance(status, dict):
+        status = {}
+
+    tex_zip_path = _existing_tex_zip_path(metadata, output_dir, stem)
+    if require_tex_zip and tex_zip_path is None:
+        return None
+
+    return ConversionArtifact(
+        pdf_path=pdf_path,
+        pdf_id=pdf_id,
+        text_path=text_path,
+        tex_zip_path=tex_zip_path,
+        metadata_path=metadata_path,
+        status=status,
+    )
+
+
+def _existing_tex_zip_path(
+    metadata: dict[object, object], output_dir: Path, stem: str
+) -> Path | None:
+    raw_path = metadata.get("tex_zip_path")
+    candidates: list[Path] = []
+    if isinstance(raw_path, str) and raw_path:
+        candidates.append(Path(raw_path))
+    candidates.append(output_dir / f"{stem}.tex.zip")
+    for candidate in candidates:
+        path = candidate.expanduser()
+        if _non_empty_file(path):
+            return path
+    return None
+
+
+def _non_empty_file(path: Path) -> bool:
+    return path.is_file() and path.stat().st_size > 0

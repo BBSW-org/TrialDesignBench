@@ -15,6 +15,7 @@ from typing import Any, Protocol
 from trialdesignbench.models import ConversionArtifact
 
 MATHPIX_API_BASE_URL = "https://api.mathpix.com/v3"
+DEFAULT_HTTP_TIMEOUT_SECONDS = 30.0
 
 
 class MathpixError(RuntimeError):
@@ -45,7 +46,7 @@ class MathpixTransport(Protocol):
 class UrllibMathpixTransport:
     """`urllib` implementation of the Mathpix HTTP transport."""
 
-    timeout_seconds: float = 30.0
+    timeout_seconds: float = DEFAULT_HTTP_TIMEOUT_SECONDS
 
     def post_multipart(
         self,
@@ -105,7 +106,8 @@ class MathpixClient:
     app_id: str
     app_key: str
     base_url: str = MATHPIX_API_BASE_URL
-    transport: MathpixTransport = UrllibMathpixTransport()
+    transport: MathpixTransport | None = None
+    http_timeout_seconds: float = DEFAULT_HTTP_TIMEOUT_SECONDS
 
     def convert_pdf(
         self,
@@ -174,7 +176,7 @@ class MathpixClient:
         if save_tex_zip:
             options["conversion_formats"] = {"tex.zip": True}
         data = {"options_json": json.dumps(options)} if options else {}
-        response = self.transport.post_multipart(
+        response = self._transport().post_multipart(
             f"{self.base_url}/pdf",
             headers=self._headers(),
             file_path=pdf_path,
@@ -195,7 +197,7 @@ class MathpixClient:
         """Poll Mathpix until PDF OCR completes or fails."""
         deadline = time.monotonic() + timeout_seconds
         while True:
-            status = self.transport.get_json(
+            status = self._transport().get_json(
                 f"{self.base_url}/pdf/{pdf_id}",
                 headers=self._headers(),
             )
@@ -219,7 +221,7 @@ class MathpixClient:
         """Poll Mathpix until a requested conversion format is ready."""
         deadline = time.monotonic() + timeout_seconds
         while True:
-            status = self.transport.get_json(
+            status = self._transport().get_json(
                 f"{self.base_url}/converter/{pdf_id}",
                 headers=self._headers(),
             )
@@ -246,13 +248,18 @@ class MathpixClient:
 
     def download_bytes(self, pdf_id: str, extension: str) -> bytes:
         """Download a completed Mathpix PDF result by extension."""
-        return self.transport.get_bytes(
+        return self._transport().get_bytes(
             f"{self.base_url}/pdf/{pdf_id}.{extension}",
             headers=self._headers(),
         )
 
     def _headers(self) -> dict[str, str]:
         return {"app_id": self.app_id, "app_key": self.app_key}
+
+    def _transport(self) -> MathpixTransport:
+        if self.transport is not None:
+            return self.transport
+        return UrllibMathpixTransport(timeout_seconds=self.http_timeout_seconds)
 
 
 def _encode_multipart(*, boundary: str, file_path: Path, data: dict[str, str]) -> bytes:
