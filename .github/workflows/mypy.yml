@@ -33,4 +33,4 @@ jobs:
 
       - name: Run Type Checks
         run: |
-          uv run mypy .
+          uv run --no-sync mypy .

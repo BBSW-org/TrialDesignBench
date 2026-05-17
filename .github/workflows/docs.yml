@@ -29,7 +29,7 @@ jobs:
           uv sync --dev --python 3.14 --no-python-downloads \
             --no-install-package openai-codex \
             --no-install-package openai-codex-cli-bin
-      - run: uv run zensical build --clean
+      - run: uv run --no-sync zensical build --clean
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site

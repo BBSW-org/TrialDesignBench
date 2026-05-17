@@ -25,4 +25,4 @@ jobs:
             --no-install-package openai-codex \
             --no-install-package openai-codex-cli-bin
       - name: Run Ruff
-        run: uv run ruff check --output-format=github .
+        run: uv run --no-sync ruff check --output-format=github .

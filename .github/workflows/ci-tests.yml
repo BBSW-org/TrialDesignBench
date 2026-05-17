@@ -33,7 +33,7 @@ jobs:
         env:
           TDB_SKIP_CODEX_RUNTIME_TESTS: "1"
         run: |
-          uv run pytest
+          uv run --no-sync pytest
 
       # - name: Upload coverage reports to Codecov
       #   uses: codecov/codecov-action@v4
@@ -56,4 +56,4 @@ jobs:
           uv sync --dev --python 3.14 --no-python-downloads
       - name: Test with pytest
         run: |
-          uv run pytest
+          uv run --no-sync pytest
