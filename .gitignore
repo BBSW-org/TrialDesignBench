@@ -14,3 +14,6 @@ wheels/
 
 # Vendor files
 /vendor/
+
+# dotenv files
+.env
