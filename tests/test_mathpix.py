@@ -5,7 +5,7 @@ from typing import Any
 
 from pypdf import PdfWriter
 
-from trialdesignbench.mathpix import MathpixClient
+from trialdesignbench.mathpix import MathpixClient, UrllibMathpixTransport
 
 
 class FakeTransport:
@@ -73,3 +73,16 @@ def test_mathpix_client_converts_pdf_and_saves_artifacts(tmp_path: Path) -> None
     assert artifact.metadata_path.exists()
     assert transport.submitted_file == pdf_path.resolve()
     assert '"tex.zip": true' in transport.submitted_data["options_json"]
+
+
+def test_mathpix_client_threads_http_timeout_to_default_transport() -> None:
+    client = MathpixClient(
+        app_id="app-id",
+        app_key="app-key",
+        http_timeout_seconds=120.0,
+    )
+
+    transport = client._transport()
+
+    assert isinstance(transport, UrllibMathpixTransport)
+    assert transport.timeout_seconds == 120.0
