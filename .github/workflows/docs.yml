@@ -21,12 +21,14 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
-          python-version: 3.x
+          python-version: "3.14"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install uv
-          uv sync --dev
+          uv sync --dev --python 3.14 --no-python-downloads \
+            --no-install-package openai-codex \
+            --no-install-package openai-codex-cli-bin
       - run: uv run zensical build --clean
       - uses: actions/upload-pages-artifact@v5
         with:
