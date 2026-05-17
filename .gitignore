@@ -11,3 +11,9 @@ wheels/
 
 # Zensical site
 /site/
+
+# Vendor files
+/vendor/
+
+# dotenv files
+.env

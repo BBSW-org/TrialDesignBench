@@ -20,6 +20,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff
+          pip install uv
+          uv sync --dev --python 3.14 --no-python-downloads \
+            --no-install-package openai-codex \
+            --no-install-package openai-codex-cli-bin
       - name: Run Ruff
-        run: ruff check --output-format=github .
+        run: uv run --no-sync ruff check --output-format=github .

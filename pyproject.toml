@@ -3,7 +3,13 @@ name = "trialdesignbench"
 version = "0.1.0"
 description = "Evaluate whether AI agents can create efficient, reproducible, and safe clinical trial design"
 authors = [{ name = "Nan Xiao", email = "me@nanx.me" }]
-dependencies = ["pydantic>=2.13.4", "tqdm>=4.67.3"]
+dependencies = [
+    "openai-codex",
+    "pydantic>=2.13.4",
+    "python-dotenv>=1.2.2",
+    "tqdm>=4.67.3",
+    "typer>=0.25.1",
+]
 readme = "README.md"
 
 classifiers = [
@@ -31,6 +37,10 @@ classifiers = [
 
 requires-python = ">= 3.10"
 
+[project.scripts]
+tdb = "trialdesignbench.cli:main"
+trialdesignbench = "trialdesignbench.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -41,11 +51,25 @@ exclude = ["/docs", "/AGENTS.md", "/zensical.toml", "/uv.lock"]
 [tool.hatch.build.targets.wheel]
 exclude = ["/docs", "/AGENTS.md", "/zensical.toml", "/uv.lock"]
 
+[tool.isort]
+skip = [".venv", "vendor"]
+
+[tool.mypy]
+exclude = ["vendor/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = [".venv", "vendor"]
+
+[tool.uv.sources]
+openai-codex = { git = "https://github.com/openai/codex.git", subdirectory = "sdk/python" }
+
 [dependency-groups]
 dev = [
     "isort>=8.0.1",
     "mkdocstrings-python>=2.0.3",
     "mypy>=2.0.0",
+    "pypdf>=6.11.0",
     "pytest>=9.0.3",
     "ruff>=0.15.12",
     "zensical>=0.0.42",

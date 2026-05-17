@@ -17,7 +17,13 @@ nav = [
         "articles/configuration.md",
     ] },
     { "API reference" = [
-        "reference/cases.md",
+        "reference/index.md",
+        "reference/config.md",
+        "reference/mathpix.md",
+        "reference/pipeline.md",
+        "reference/prompt.md",
+        "reference/codex.md",
+        "reference/models.md",
     ] },
     { "Changelog" = "changelog.md" },
 ]

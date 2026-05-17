@@ -24,14 +24,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          # we are using the -e flag, so that code cov finds the source.
-          # this is not ideal, since installing an editable can technically
-          # differ from a normal install in surprising ways.
-          pip install -e '.[all]'
+          python -m pip install --upgrade pip
+          pip install uv
+          uv sync --dev --python ${{ matrix.python-version }} --no-python-downloads \
+            --no-install-package openai-codex \
+            --no-install-package openai-codex-cli-bin
       - name: Test with pytest
+        env:
+          TDB_SKIP_CODEX_RUNTIME_TESTS: "1"
         run: |
-          pip install pytest
-          pytest
+          uv run --no-sync pytest
 
       # - name: Upload coverage reports to Codecov
       #   uses: codecov/codecov-action@v4
@@ -49,8 +51,9 @@ jobs:
           python-version: "3.14"
       - name: Install dependencies
         run: |
-          pip install -e '.[all]'
+          python -m pip install --upgrade pip
+          pip install uv
+          uv sync --dev --python 3.14 --no-python-downloads
       - name: Test with pytest
         run: |
-          pip install pytest
-          pytest
+          uv run --no-sync pytest
