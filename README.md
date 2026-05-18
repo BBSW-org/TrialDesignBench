@@ -8,15 +8,26 @@
 [![Documentation](https://github.com/BBSW-org/TrialDesignBench/actions/workflows/docs.yml/badge.svg)](https://bbsw-org.github.io/TrialDesignBench/)
 ![License](https://img.shields.io/pypi/l/trialdesignbench)
 
-TrialDesignBench provides tooling for evaluating whether AI agents can reproduce
-clinical trial designs from Statistical Analysis Plans and protocols.
+TrialDesignBench is a community-driven benchmark for evaluating AI agents in 
+clinical trial design.
 
-This baseline implements workflow step 1:
+The benchmark currently focuses on two core tasks:
+
+- **Task 1 (Reproduction):** Given a Statistical Analysis Plan (SAP) or study protocol, evaluate how accurately AI agents can reproduce the trial design using R.
+- **Task 2 (Design Generation):** Given high-level clinical requirements, evaluate the ability of AI agents to draft new clinical trial design using R.
+
+# Task 1 (Reproduction)
+
+This baseline implements the workflow for reproducing existing designs:
 
 1. Create a local benchmark workspace.
 2. Convert a SAP/protocol PDF to Mathpix Markdown, with optional LaTeX ZIP output.
 3. Build the standard TrialDesignBench reproduction prompt.
 4. Run the prompt against a locally installed Codex SDK/runtime and save the run artifacts.
+
+# Task 2 (Design Generation)
+
+**Under Development**
 
 ## Installation
 
