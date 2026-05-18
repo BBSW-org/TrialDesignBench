@@ -35,43 +35,21 @@ This baseline implements the workflow for reproducing existing designs:
 uv add trialdesignbench
 ```
 
-For development:
-
-```bash
-git clone https://github.com/BBSW-org/TrialDesignBench.git
-cd TrialDesignBench
-uv sync
-```
-
-The experimental Codex Python SDK is declared as a Git source dependency for
-`uv` environments until it is published on PyPI. From a clone of this
-repository, `uv sync` installs both `openai-codex` and its pinned local runtime.
-For PyPI-only installs before `openai-codex` is published on PyPI, add the SDK
-source explicitly in the consuming project:
-
-```bash
-uv add "openai-codex @ git+https://github.com/openai/codex.git#subdirectory=sdk/python"
-```
+For detailed installation and development setup, see the [Installation Guide](https://bbsw-org.github.io/TrialDesignBench/articles/configuration.html).
 
 ## Quick Start
 
-```bash
-uv run tdb init tdb-workspace
-uv run tdb configure --workspace tdb-workspace
-uv run tdb run path/to/sap.pdf --workspace tdb-workspace --case-id tdb-001
-```
+1. **Initialize** a workspace:
+   ```bash
+   uv run tdb init tdb-workspace
+   ```
+2. **Configure** credentials (Mathpix and Codex):
+   ```bash
+   uv run tdb configure --workspace tdb-workspace
+   ```
+3. **Run** the benchmark on a protocol PDF:
+   ```bash
+   uv run tdb run path/to/sap.pdf --workspace tdb-workspace --case-id tdb-001
+   ```
 
-Use `--no-codex` to exercise only the Mathpix ingestion portion:
-
-```bash
-uv run tdb run path/to/sap.pdf --workspace tdb-workspace --no-codex
-```
-
-The workspace `.env` file stores `MATHPIX_APP_ID`, `MATHPIX_APP_KEY`,
-`CODEX_MODEL`, and optionally `CODEX_BIN`. The default Codex model is
-`gpt-5.5`, and the default reasoning effort is `high`. The generated workspace
-`.gitignore` excludes credentials and output artifacts by default.
-
-Converted Mathpix artifacts are reused by default on retry. Add `--force` to
-submit the PDF again, or `--http-timeout` to increase the per-request Mathpix
-HTTP timeout for large uploads.
+For a full explanation of CLI commands, artifacts, and configuration options, refer to the [Usage Guide](https://bbsw-org.github.io/TrialDesignBench/articles/usage.html) and [Configuration Reference](https://bbsw-org.github.io/TrialDesignBench/articles/configuration.html).
