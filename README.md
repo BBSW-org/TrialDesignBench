@@ -14,7 +14,7 @@ clinical trial design.
 The benchmark currently focuses on two core tasks:
 
 - **Task 1 (Reproduction):** Given a Statistical Analysis Plan (SAP) or study protocol, evaluate how accurately AI agents can reproduce the trial design using R.
-- **Task 2 (Design Generation):** Given high-level clinical requirements, evaluate the ability of AI agents to draft new clinical trial design using R.
+- **Task 2 (Design Generation):** Given high-level clinical requirements, evaluate the ability of AI agents to draft new clinical trial designs using R.
 
 # Task 1 (Reproduction)
 
