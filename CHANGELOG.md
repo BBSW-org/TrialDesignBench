@@ -1,6 +1,6 @@
 # Changelog
 
-## trialdesignbench (development version)
+## trialdesignbench 0.2.2
 
 ### Improvements
 
