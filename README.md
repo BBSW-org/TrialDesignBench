@@ -8,15 +8,20 @@
 [![Documentation](https://github.com/BBSW-org/TrialDesignBench/actions/workflows/docs.yml/badge.svg)](https://bbsw-org.github.io/TrialDesignBench/)
 ![License](https://img.shields.io/pypi/l/trialdesignbench)
 
-TrialDesignBench is a community-driven benchmark for evaluating AI agents in 
+TrialDesignBench is a community-driven benchmark for evaluating AI agents in
 clinical trial design.
+
+## Scope
 
 The benchmark currently focuses on two core tasks:
 
-- **Task 1 (Reproduction):** Given a Statistical Analysis Plan (SAP) or study protocol, evaluate how accurately AI agents can reproduce the trial design using R.
-- **Task 2 (Design Generation):** Given high-level clinical requirements, evaluate the ability of AI agents to draft new clinical trial designs using R.
+- **Task 1 (Reproduction):** Given a Statistical Analysis Plan (SAP) or
+  study protocol, evaluate how accurately AI agents can reproduce the
+  trial design using R.
+- **Task 2 (design generation):** Given high-level clinical requirements,
+  evaluate the ability of AI agents to draft new clinical trial designs using R.
 
-# Task 1 (Reproduction)
+### Task 1 (reproduction)
 
 This baseline implements the workflow for reproducing existing designs:
 
@@ -25,9 +30,9 @@ This baseline implements the workflow for reproducing existing designs:
 3. Build the standard TrialDesignBench reproduction prompt.
 4. Run the prompt against a locally installed Codex SDK/runtime and save the run artifacts.
 
-# Task 2 (Design Generation)
+### Task 2 (design generation)
 
-**Under Development**
+Under development.
 
 ## Installation
 
@@ -35,21 +40,29 @@ This baseline implements the workflow for reproducing existing designs:
 uv add trialdesignbench
 ```
 
-For detailed installation and development setup, see the [Installation Guide](https://bbsw-org.github.io/TrialDesignBench/articles/configuration.html).
+For development:
 
-## Quick Start
+```bash
+git clone https://github.com/BBSW-org/TrialDesignBench.git
+cd TrialDesignBench
+uv sync
+```
 
-1. **Initialize** a workspace:
+## Quick start
+
+1. Initialize a workspace:
    ```bash
    uv run tdb init tdb-workspace
    ```
-2. **Configure** credentials (Mathpix and Codex):
+2. Configure API credentials (Mathpix):
    ```bash
    uv run tdb configure --workspace tdb-workspace
    ```
-3. **Run** the benchmark on a protocol PDF:
+3. Run the benchmark on a protocol PDF:
    ```bash
    uv run tdb run path/to/sap.pdf --workspace tdb-workspace --case-id tdb-001
    ```
 
-For a full explanation of CLI commands, artifacts, and configuration options, refer to the [Usage Guide](https://bbsw-org.github.io/TrialDesignBench/articles/usage.html) and [Configuration Reference](https://bbsw-org.github.io/TrialDesignBench/articles/configuration.html).
+For a full explanation of CLI commands, artifacts, and configuration options,
+see the [usage guide](https://bbsw-org.github.io/TrialDesignBench/articles/usage/)
+and [configuration](https://bbsw-org.github.io/TrialDesignBench/articles/configuration/).
