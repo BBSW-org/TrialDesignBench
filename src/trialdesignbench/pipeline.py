@@ -123,18 +123,33 @@ class StepOnePipeline:
                 case_id=case_id,
             )
             run_dir = self._run_directory(conversion, case_id=case_id)
+            active_model = model or self.config.codex_model
             self._report(
-                f"Starting Codex reproduction with model "
-                f"{model or self.config.codex_model} and effort {effort}"
+                f"Starting reproduction with model {active_model} and effort {effort}"
             )
-            runner = self.codex_runner or LocalCodexRunner(
-                status_reporter=self.status_reporter
-            )
+
+            if active_model.startswith("claude"):
+                from trialdesignbench.claude import ClaudeRunner
+
+                if not self.config.anthropic_api_key:
+                    raise ValueError(
+                        "Anthropic API key is required to use a Claude model. "
+                        "Run `tdb configure` or edit .env"
+                    )
+                runner = self.codex_runner or ClaudeRunner(
+                    api_key=self.config.anthropic_api_key,
+                    status_reporter=self.status_reporter,
+                )
+            else:
+                runner = self.codex_runner or LocalCodexRunner(
+                    status_reporter=self.status_reporter
+                )
+
             try:
                 codex_run = runner.run(
                     prompt=prompt,
                     run_directory=run_dir,
-                    model=model or self.config.codex_model,
+                    model=active_model,
                     codex_bin=codex_bin or self.config.codex_bin,
                     effort=effort,
                 )
