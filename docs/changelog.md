@@ -1,5 +1,16 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Improvements
+
+- Add Rich-powered status output to `tdb convert` and `tdb run`, showing
+  Mathpix upload, polling, download, artifact writing, prompt creation, Codex
+  execution, and final artifact locations (#27).
+- Stream supported Codex Python SDK turn events to the console during local
+  design reproduction, including plan updates, commands, tool calls, file
+  changes, final response completion, and token usage (#27).
+
 ## trialdesignbench 0.2.1
 
 ### Improvements

@@ -91,8 +91,9 @@ def test_cli_convert_threads_http_timeout(
         tex_zip_path = None
 
     class FakePipeline:
-        def __init__(self, config: object) -> None:
+        def __init__(self, config: object, **kwargs: Any) -> None:
             captured["config"] = config
+            captured["init_kwargs"] = kwargs
 
         def convert(self, pdf: Path, **kwargs: Any) -> FakeArtifact:
             captured["pdf"] = pdf
