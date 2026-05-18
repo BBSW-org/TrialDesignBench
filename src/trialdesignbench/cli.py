@@ -247,10 +247,10 @@ def _print_conversion_summary(artifact: ConversionArtifact) -> None:
     )
     table.add_column("Artifact", style="bold", no_wrap=True)
     table.add_column("Path", style="cyan", overflow="fold")
-    table.add_row("Converted text", str(artifact.text_path))
-    table.add_row("Mathpix metadata", str(artifact.metadata_path))
+    table.add_row("Converted text", escape(str(artifact.text_path)))
+    table.add_row("Mathpix metadata", escape(str(artifact.metadata_path)))
     if artifact.tex_zip_path:
-        table.add_row("LaTeX ZIP", str(artifact.tex_zip_path))
+        table.add_row("LaTeX ZIP", escape(str(artifact.tex_zip_path)))
     console.print(table)
 
 
@@ -268,8 +268,8 @@ def _print_run_summary(result: StepOneResult) -> None:
     )
     table.add_column("Artifact", style="bold", no_wrap=True)
     table.add_column("Path", style="cyan", overflow="fold")
-    table.add_row("Run directory", str(codex_run.run_directory))
-    table.add_row("Prompt", str(codex_run.prompt_path))
-    table.add_row("Response", str(codex_run.response_path))
-    table.add_row("Metadata", str(codex_run.metadata_path))
+    table.add_row("Run directory", escape(str(codex_run.run_directory)))
+    table.add_row("Prompt", escape(str(codex_run.prompt_path)))
+    table.add_row("Response", escape(str(codex_run.response_path)))
+    table.add_row("Metadata", escape(str(codex_run.metadata_path)))
     console.print(table)
