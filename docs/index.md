@@ -25,6 +25,10 @@ This baseline implements the workflow for reproducing existing designs:
 3. Build the standard TrialDesignBench reproduction prompt.
 4. Run the prompt against a locally installed Codex SDK/runtime and save the run artifacts.
 
+# Task 2 (Design Generation)
+
+**Under Development**
+
 ## Installation
 
 ```bash
