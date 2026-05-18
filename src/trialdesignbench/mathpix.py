@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from trialdesignbench.models import ConversionArtifact
+from trialdesignbench.status import StatusReporter
 
 MATHPIX_API_BASE_URL = "https://api.mathpix.com/v3"
 DEFAULT_HTTP_TIMEOUT_SECONDS = 30.0
@@ -108,6 +109,7 @@ class MathpixClient:
     base_url: str = MATHPIX_API_BASE_URL
     transport: MathpixTransport | None = None
     http_timeout_seconds: float = DEFAULT_HTTP_TIMEOUT_SECONDS
+    status_reporter: StatusReporter | None = None
 
     def convert_pdf(
         self,
@@ -129,7 +131,9 @@ class MathpixClient:
         destination = output_dir.expanduser().resolve()
         destination.mkdir(parents=True, exist_ok=True)
 
+        self._report(f"Mathpix: uploading {source_pdf.name}")
         pdf_id = self.submit_pdf(source_pdf, save_tex_zip=save_tex_zip)
+        self._report(f"Mathpix: submitted PDF job {pdf_id}")
         status = self.wait_for_pdf(
             pdf_id,
             poll_interval_seconds=poll_interval_seconds,
@@ -138,10 +142,13 @@ class MathpixClient:
 
         stem = source_pdf.stem
         text_path = destination / f"{stem}.mmd"
+        self._report("Mathpix: downloading converted Markdown")
         text_path.write_text(self.download_text(pdf_id), encoding="utf-8")
+        self._report(f"Mathpix: saved converted text to {text_path}")
 
         tex_zip_path: Path | None = None
         if save_tex_zip:
+            self._report("Mathpix: waiting for LaTeX ZIP conversion")
             self.wait_for_conversion(
                 pdf_id,
                 "tex.zip",
@@ -149,7 +156,9 @@ class MathpixClient:
                 timeout_seconds=timeout_seconds,
             )
             tex_zip_path = destination / f"{stem}.tex.zip"
+            self._report("Mathpix: downloading LaTeX ZIP")
             tex_zip_path.write_bytes(self.download_bytes(pdf_id, "tex.zip"))
+            self._report(f"Mathpix: saved LaTeX ZIP to {tex_zip_path}")
 
         metadata_path = destination / f"{stem}.mathpix.json"
         metadata = {
@@ -196,12 +205,18 @@ class MathpixClient:
     ) -> dict[str, Any]:
         """Poll Mathpix until PDF OCR completes or fails."""
         deadline = time.monotonic() + timeout_seconds
+        attempt = 0
         while True:
+            attempt += 1
             status = self._transport().get_json(
                 f"{self.base_url}/pdf/{pdf_id}",
                 headers=self._headers(),
             )
             status_value = status.get("status")
+            self._report(
+                f"Mathpix: PDF job {pdf_id} status check {attempt}: "
+                f"{status_value or 'unknown'}"
+            )
             if status_value == "completed":
                 return status
             if status_value == "error":
@@ -220,20 +235,35 @@ class MathpixClient:
     ) -> dict[str, Any]:
         """Poll Mathpix until a requested conversion format is ready."""
         deadline = time.monotonic() + timeout_seconds
+        attempt = 0
         while True:
+            attempt += 1
             status = self._transport().get_json(
                 f"{self.base_url}/converter/{pdf_id}",
                 headers=self._headers(),
             )
             conversion_status = status.get("conversion_status")
+            state = "unknown"
             if isinstance(conversion_status, dict):
                 format_status = conversion_status.get(conversion_format)
                 if isinstance(format_status, dict):
-                    state = format_status.get("status")
+                    raw_state = format_status.get("status")
+                    state = raw_state if isinstance(raw_state, str) else "unknown"
                     if state == "completed":
+                        self._report(
+                            f"Mathpix: {conversion_format} status check {attempt}: "
+                            f"{state}"
+                        )
                         return status
                     if state == "error":
+                        self._report(
+                            f"Mathpix: {conversion_format} status check {attempt}: "
+                            f"{state}"
+                        )
                         raise MathpixError(f"Mathpix conversion failed: {status}")
+            self._report(
+                f"Mathpix: {conversion_format} status check {attempt}: {state}"
+            )
             if status.get("status") == "error":
                 raise MathpixError(f"Mathpix conversion failed: {status}")
             if time.monotonic() >= deadline:
@@ -260,6 +290,10 @@ class MathpixClient:
         if self.transport is not None:
             return self.transport
         return UrllibMathpixTransport(timeout_seconds=self.http_timeout_seconds)
+
+    def _report(self, message: str) -> None:
+        if self.status_reporter is not None:
+            self.status_reporter(message)
 
 
 def _encode_multipart(*, boundary: str, file_path: Path, data: dict[str, str]) -> bytes:

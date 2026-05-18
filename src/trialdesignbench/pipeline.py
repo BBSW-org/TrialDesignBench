@@ -12,6 +12,7 @@ from trialdesignbench.config import DEFAULT_CODEX_EFFORT, TdbConfig
 from trialdesignbench.mathpix import DEFAULT_HTTP_TIMEOUT_SECONDS, MathpixClient
 from trialdesignbench.models import CodexRunArtifact, ConversionArtifact, StepOneResult
 from trialdesignbench.prompt import build_reproduction_prompt
+from trialdesignbench.status import StatusReporter
 
 
 class PdfConverter(Protocol):
@@ -36,6 +37,7 @@ class StepOnePipeline:
     config: TdbConfig
     converter: PdfConverter | None = None
     codex_runner: CodexRunner | None = None
+    status_reporter: StatusReporter | None = None
 
     def convert(
         self,
@@ -49,6 +51,7 @@ class StepOnePipeline:
     ) -> ConversionArtifact:
         """Convert a SAP/protocol PDF into Mathpix Markdown."""
         source_pdf = pdf_path.expanduser().resolve()
+        self._report(f"Checking source PDF: {source_pdf}")
         if not source_pdf.exists():
             raise FileNotFoundError(source_pdf)
         if source_pdf.suffix.lower() != ".pdf":
@@ -63,20 +66,27 @@ class StepOnePipeline:
                 require_tex_zip=save_tex_zip,
             )
             if existing is not None:
+                self._report(
+                    f"Reusing existing Mathpix conversion: {existing.text_path}"
+                )
                 return existing
 
+        self._report("Starting Mathpix PDF conversion")
         converter = self.converter or MathpixClient(
             app_id=self.config.mathpix_app_id,
             app_key=self.config.mathpix_app_key,
             http_timeout_seconds=http_timeout_seconds,
+            status_reporter=self.status_reporter,
         )
-        return converter.convert_pdf(
+        artifact = converter.convert_pdf(
             source_pdf,
             output_dir,
             save_tex_zip=save_tex_zip,
             poll_interval_seconds=poll_interval_seconds,
             timeout_seconds=timeout_seconds,
         )
+        self._report("Mathpix conversion completed")
+        return artifact
 
     def run(
         self,
@@ -106,13 +116,20 @@ class StepOnePipeline:
         result_path = self._result_path(conversion, case_id=case_id)
 
         if run_codex:
+            self._report("Building the trial design reproduction prompt")
             prompt = build_reproduction_prompt(
                 document_text=conversion.read_text(),
                 source_name=conversion.pdf_path.name,
                 case_id=case_id,
             )
             run_dir = self._run_directory(conversion, case_id=case_id)
-            runner = self.codex_runner or LocalCodexRunner()
+            self._report(
+                f"Starting Codex reproduction with model "
+                f"{model or self.config.codex_model} and effort {effort}"
+            )
+            runner = self.codex_runner or LocalCodexRunner(
+                status_reporter=self.status_reporter
+            )
             try:
                 codex_run = runner.run(
                     prompt=prompt,
@@ -123,12 +140,19 @@ class StepOnePipeline:
                 )
             except Exception:
                 result = StepOneResult(conversion=conversion, codex_run=None)
+                self._report(
+                    f"Codex failed; writing partial workflow summary to {result_path}"
+                )
                 result_path.write_text(
                     result.model_dump_json(indent=2), encoding="utf-8"
                 )
                 raise
+            self._report(f"Codex reproduction completed: {codex_run.response_path}")
+        else:
+            self._report("Skipping Codex reproduction because --no-codex was set")
 
         result = StepOneResult(conversion=conversion, codex_run=codex_run)
+        self._report(f"Writing workflow summary to {result_path}")
         result_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
         return result
 
@@ -143,6 +167,10 @@ class StepOnePipeline:
         run_root = self.config.workspace / "runs"
         run_root.mkdir(parents=True, exist_ok=True)
         return run_root / f"{case_id or conversion.pdf_path.stem}.step1.json"
+
+    def _report(self, message: str) -> None:
+        if self.status_reporter is not None:
+            self.status_reporter(message)
 
 
 def _load_existing_conversion(
