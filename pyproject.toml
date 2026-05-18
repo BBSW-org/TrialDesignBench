@@ -4,6 +4,7 @@ version = "0.2.2"
 description = "Evaluate whether AI agents can create efficient, reproducible, and safe clinical trial design"
 authors = [{ name = "Nan Xiao", email = "me@nanx.me" }]
 dependencies = [
+    "google-genai>=2.4.0",
     "openai-codex",
     "pydantic>=2.13.4",
     "python-dotenv>=1.2.2",

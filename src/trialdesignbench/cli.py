@@ -58,6 +58,10 @@ def configure(
         str | None,
         typer.Option("--mathpix-app-key", help="Mathpix app_key.", hide_input=True),
     ] = None,
+    gemini_api_key: Annotated[
+        str | None,
+        typer.Option("--gemini-api-key", help="Gemini API key.", hide_input=True),
+    ] = None,
     codex_model: Annotated[
         str,
         typer.Option("--codex-model", help="Local Codex model name."),
@@ -70,10 +74,14 @@ def configure(
     """Write Mathpix and Codex configuration to the workspace `.env` file."""
     app_id = mathpix_app_id or typer.prompt("Mathpix app_id")
     app_key = mathpix_app_key or typer.prompt("Mathpix app_key", hide_input=True)
+    gem_key = gemini_api_key or typer.prompt(
+        "Gemini API key (optional, enter to skip)", default="", hide_input=True
+    )
     env_file = write_workspace_config(
         workspace,
         mathpix_app_id=app_id,
         mathpix_app_key=app_key,
+        gemini_api_key=gem_key if gem_key else None,
         codex_model=codex_model,
         codex_bin=codex_bin,
     )

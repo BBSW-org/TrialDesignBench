@@ -21,6 +21,7 @@ class TdbConfig:
     env_file: Path
     mathpix_app_id: str
     mathpix_app_key: str
+    gemini_api_key: str | None = None
     codex_model: str = DEFAULT_CODEX_MODEL
     codex_bin: str | None = None
 
@@ -53,6 +54,7 @@ def create_workspace(path: Path) -> Path:
                 [
                     "MATHPIX_APP_ID=",
                     "MATHPIX_APP_KEY=",
+                    "GEMINI_API_KEY=",
                     f"CODEX_MODEL={DEFAULT_CODEX_MODEL}",
                     "CODEX_BIN=",
                     "",
@@ -69,6 +71,7 @@ def configure_workspace(
     *,
     mathpix_app_id: str,
     mathpix_app_key: str,
+    gemini_api_key: str | None = None,
     codex_model: str = DEFAULT_CODEX_MODEL,
     codex_bin: str | None = None,
 ) -> Path:
@@ -77,6 +80,8 @@ def configure_workspace(
     env_file = resolved / ENV_FILENAME
     set_key(str(env_file), "MATHPIX_APP_ID", mathpix_app_id)
     set_key(str(env_file), "MATHPIX_APP_KEY", mathpix_app_key)
+    if gemini_api_key is not None:
+        set_key(str(env_file), "GEMINI_API_KEY", gemini_api_key)
     set_key(str(env_file), "CODEX_MODEL", codex_model)
     if codex_bin:
         set_key(str(env_file), "CODEX_BIN", codex_bin)
@@ -104,11 +109,13 @@ def load_config(workspace: Path) -> TdbConfig:
 
     codex_model = values.get("CODEX_MODEL") or DEFAULT_CODEX_MODEL
     codex_bin = values.get("CODEX_BIN") or None
+    gemini_api_key = values.get("GEMINI_API_KEY") or None
     return TdbConfig(
         workspace=resolved,
         env_file=env_file,
         mathpix_app_id=app_id,
         mathpix_app_key=app_key,
+        gemini_api_key=gemini_api_key,
         codex_model=codex_model,
         codex_bin=codex_bin,
     )

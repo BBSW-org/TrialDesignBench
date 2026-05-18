@@ -123,18 +123,32 @@ class StepOnePipeline:
                 case_id=case_id,
             )
             run_dir = self._run_directory(conversion, case_id=case_id)
+            active_model = model or self.config.codex_model
             self._report(
-                f"Starting Codex reproduction with model "
-                f"{model or self.config.codex_model} and effort {effort}"
+                f"Starting reproduction with model {active_model} and effort {effort}"
             )
-            runner = self.codex_runner or LocalCodexRunner(
-                status_reporter=self.status_reporter
-            )
+
+            if active_model.startswith("gemini"):
+                from trialdesignbench.gemini import GeminiRunner
+
+                if not self.config.gemini_api_key:
+                    raise ValueError(
+                        "Gemini API key is required to use a Gemini model. Run `tdb configure` or edit .env"
+                    )
+                runner = self.codex_runner or GeminiRunner(
+                    api_key=self.config.gemini_api_key,
+                    status_reporter=self.status_reporter,
+                )
+            else:
+                runner = self.codex_runner or LocalCodexRunner(
+                    status_reporter=self.status_reporter
+                )
+
             try:
                 codex_run = runner.run(
                     prompt=prompt,
                     run_directory=run_dir,
-                    model=model or self.config.codex_model,
+                    model=active_model,
                     codex_bin=codex_bin or self.config.codex_bin,
                     effort=effort,
                 )
@@ -149,7 +163,7 @@ class StepOnePipeline:
                 raise
             self._report(f"Codex reproduction completed: {codex_run.response_path}")
         else:
-            self._report("Skipping Codex reproduction because --no-codex was set")
+            self._report("Skipping reproduction because --no-codex was set")
 
         result = StepOneResult(conversion=conversion, codex_run=codex_run)
         self._report(f"Writing workflow summary to {result_path}")
