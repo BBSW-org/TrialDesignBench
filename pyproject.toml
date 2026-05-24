@@ -70,8 +70,10 @@ dev = [
     "isort>=8.0.1",
     "mkdocstrings-python>=2.0.3",
     "mypy>=2.0.0",
+    "pandas-stubs>=2.0.0",
     "pypdf>=6.11.0",
     "pytest>=9.0.3",
     "ruff>=0.15.12",
+    "types-openpyxl>=3.1.0",
     "zensical>=0.0.42",
 ]
