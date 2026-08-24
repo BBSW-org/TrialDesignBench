@@ -1,0 +1,335 @@
+{
+  "submissionId": "submissions/10_1056_nejmoa2511478__Qimeng_Che/2026-08-15T05-14-03-356266+00-00.json",
+  "version": "2026-08-15T05-14-03-356266+00-00",
+  "submittedAt": "2026-08-15T05:14:03.356266+00:00",
+  "trial_id": "10.1056_nejmoa2511478",
+  "username": "Qimeng Che",
+  "comparison": {
+    "trial_id": "10.1056_nejmoa2511478",
+    "username": "Qimeng Che",
+    "prompts": [
+      {
+        "id": "P-001",
+        "design_element": "Hypotheses/Endpoints",
+        "design_element_other": "",
+        "question": "What are the endpoints with a statistical hypothesis? For each, state whether it is primary, secondary, or exploratory, the variable type, and the allocated alpha.",
+        "question_type": "extraction_only",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies CAL at 1 month as the primary endpoint with formal hypothesis test",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that the primary endpoint is a repeatedly measured binary variable",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that 9 secondary outcomes are defined, with their variable types",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that 4 exploratory outcomes are defined",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly states that only the primary endpoint carries formal hypothesis testing with allocated alpha (0.05)",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly states that secondary and exploratory endpoints have no alpha allocation",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Identifies a secondary or exploratory outcome as primary or co-primary",
+                "importance": "High",
+                "scoring": "Deduct"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "P-002",
+        "design_element": "Multiplicity control",
+        "design_element_other": "",
+        "question": "What is the total type I error rate? Enumerate all sources of multiplicity in this trial (endpoints, timepoints, subgroups, interim analyses), and state how each is controlled.",
+        "question_type": "extraction_only",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies two-sided α = 0.05",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that 9 secondary outcomes exist with no multiplicity adjustment",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that the primary model estimates 4 timepoints (1/3/6/12 months) with no multiplicity adjustment",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that 6 subgroup factors are analyzed with no multiplicity adjustment",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that 10 sensitivity analyses are conducted with no multiplicity adjustment",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that no interim analyses are planned (no alpha spending)",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "States that the absence of multiplicity control across secondary outcomes, timepoints, and subgroups inflates the family-wise type I error rate",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Invents an alpha-spending function, gatekeeping, or hierarchical testing procedure not present in the SAP",
+                "importance": "High",
+                "scoring": "Deduct"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "P-003",
+        "design_element": "Sample size and power",
+        "design_element_other": "",
+        "question": "Reproduce the sample size calculation. Report the inputs, per-group N before and after attrition inflation, planned total enrollment, and the achieved power at planned enrollment. Also state the basis of the assumed effect size.",
+        "question_type": "derivation_required",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "Inputs used",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies control-arm CAL proportion (0.124)",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies experimental-arm CAL proportion (0.091)",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies two-sided α = 0.05",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies target power = 0.80",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies allocation ratio 1:1",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies assumed dropout rate = 10%",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that arm-level rates derive from Zhu et al. 2012 meta-analysis (reference 3)",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          },
+          {
+            "artifact": "output.json",
+            "dimension": "Calculated value",
+            "criteria": [
+              {
+                "criterion": "Per-arm N before inflation ≈ 1382 (SAP rounds to 1400)",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Standard 10% dropout inflation gives ceiling(1400/0.9) = 1556 per arm",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Planned total enrollment is 3200 (1600 per arm)",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Power at planned enrollment (1440 analyzable per arm) ≈ 0.816",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Risk difference = 0.033 (3.3 percentage points)",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Risk ratio = 0.091/0.124 = 0.7339",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Odds ratio = (0.091/0.909)/(0.124/0.876) = 0.7072",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "The SAP labels \"OR = 0.73\" but this value (0.7339) is the risk ratio, not the odds ratio; the true OR is 0.7072",
+                "importance": "High",
+                "scoring": "Add"
+              }
+            ]
+          },
+          {
+            "artifact": "output.json",
+            "dimension": "Method",
+            "criteria": [
+              {
+                "criterion": "Comparison of two independent proportions using normal approximation",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Dropout inflation rounded up to 1600 per-arm enrollment target",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "The sizing is based on a single cross-sectional comparison at 1 month",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "States that the sizing method does not match the primary analysis, which is a repeated-measures GEE with treatment×visit interaction",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "States that the 3.3% risk difference is imported from a meta-analysis without justification that it represents a minimum clinically important difference",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "P-004",
+        "design_element": "Interim analyses",
+        "design_element_other": "",
+        "question": "How many interim analyses are planned? For each, state the trigger (events or calendar time) and the purpose.",
+        "question_type": "extraction_only",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "",
+            "criteria": [
+              {
+                "criterion": "Correctly states that no interim analyses are planned",
+                "importance": "High",
+                "scoring": "Add"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "P-005",
+        "design_element": "Others",
+        "design_element_other": "Primary analysis model and populations",
+        "question": "Describe the primary analysis population and model. Flag any inconsistencies between the stated analysis plan and best practices.",
+        "question_type": "extraction_only",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies that ITT is the stated primary analysis population",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "The SAP nominates ITT but excludes participants with missing primary outcome; the primary analysis is conducted on mITT, not true ITT",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies the primary model as GEE with treatment, visit, treatment×visit interaction",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies exchangeable working correlation structure",
+                "importance": "Low",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that trial site (the stratification factor) is not included in the primary model",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "States that ICH E9 requires that stratification factors be included in the primary model; trial site should be included",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that a normal (Gaussian) family with identity link was used in the final analysis because prespecified distributions did not converge",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "States that a Gaussian family is inappropriate for a binary outcome; the distributional family was selected after seeing the data",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies single stochastic imputation for missing baseline covariates (not multiple imputation)",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "States that single stochastic imputation treats imputed values as observed, understating standard errors and narrowing confidence intervals",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "States that excluding participants with missing primary outcome and fitting unweighted GEE requires outcomes to be MCAR; the assumed mechanism is not stated",
+                "importance": "High",
+                "scoring": "Add"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
