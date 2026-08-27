@@ -17,3 +17,6 @@ wheels/
 
 # dotenv files
 .env
+
+# Local scratch
+/tmp/
