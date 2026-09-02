@@ -1,5 +1,13 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Maintenance
+
+- Replace hatchling with `uv_build` as the build backend.
+  Ignore the `data/` directory in source and wheel builds.
+  Use PEP 639 recommended `license` field in `pyproject.toml` (#73).
+
 ## trialdesignbench 0.2.2
 
 ### Improvements
