@@ -1,0 +1,327 @@
+{
+  "submissionId": "submissions/10_1200_jco-24-01818__JinchengZ/2026-07-17T21-06-38-326952+00-00.json",
+  "version": "2026-07-17T21-06-38-326952+00-00",
+  "submittedAt": "2026-07-17T21:06:38.326952+00:00",
+  "trial_id": "10.1200_jco-24-01818",
+  "username": "JinchengZ",
+  "comparison": {
+    "trial_id": "10.1200_jco-24-01818",
+    "username": "JinchengZ",
+    "prompts": [
+      {
+        "id": "P-001",
+        "design_element": "Hypotheses/Endpoints",
+        "design_element_other": "",
+        "question": "What is the primary efficacy endpoint, and in which analysis set is it tested primarily?",
+        "question_type": "extraction_only",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies OS as the primary endpoint",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies ITT as the primary analysis set",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly states the OS definition as time from randomization to death due to any cause",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "P-002",
+        "design_element": "Others",
+        "design_element_other": "Randomization scheme; Stratification factor",
+        "question": "Describe the randomization scheme and the stratification factors used in the study. Also identify which stratification factors are used in the primary efficacy analysis model/test.",
+        "question_type": "extraction_only",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies 1:1 randomization",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies all 3 randomization stratification factors: region, ECOG 0 vs 1, ICC option",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly distinguishes that the primary efficacy analysis uses ECOG and ICC option, but not region, for stratified testing/modeling",
+                "importance": "High",
+                "scoring": "Add"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "P-003",
+        "design_element": "Multiplicity control",
+        "design_element_other": "",
+        "question": "What multiplicity control strategy is used, and what is the testing hierarchy across the primary and key secondary endpoints?",
+        "question_type": "extraction_only",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies one-sided alpha = 0.025",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies that OS in ITT is tested first",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies gatekeeping to OS in PD-L1 positive set only if OS in ITT is significant",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly describes strong familywise type I error control  at one-sided 0.025",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "P-004",
+        "design_element": "Sample size and power",
+        "design_element_other": "",
+        "question": "Summarize the key assumptions used for the sample size calculation.",
+        "question_type": "derivation_required",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "Inputs used",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies target HR = 0.75",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies power = 82%",
+                "importance": "High",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies one-sided alpha = 0.025",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies dropout rate = 5% per year",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          },
+          {
+            "artifact": "output.json",
+            "dimension": "Calculated value",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies approximately 500 patients, randomized 1:1",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly calculates approximately 400 deaths as target events",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          },
+          {
+            "artifact": "output.json",
+            "dimension": "Method",
+            "criteria": []
+          }
+        ]
+      },
+      {
+        "id": "P-005",
+        "design_element": "Sample size and power",
+        "design_element_other": "",
+        "question": "Using the study documents only, explain how the planned primary analysis timing is linked to the target event count and sample size design. What is the target number of deaths, and what assumptions support that target?",
+        "question_type": "derivation_required",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "Inputs used",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies approximately 400 deaths as the trigger for primary OS analysis",
+                "importance": "High",
+                "scoring": "Add"
+              }
+            ]
+          },
+          {
+            "artifact": "output.json",
+            "dimension": "Calculated value",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies at least 4 major supporting assumptions among HR, alpha, power, dropout, accrual duration, sample size, assumed median OS",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          },
+          {
+            "artifact": "output.json",
+            "dimension": "Method",
+            "criteria": [
+              {
+                "criterion": "Correctly links the target event count to sample size assumptions rather than presenting it as a standalone number",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "P-006",
+        "design_element": "Sample size and power",
+        "design_element_other": "",
+        "question": "Describe the planned primary statistical analysis for OS, including hypothesis testing method, stratification, effect estimate, and summary outputs.",
+        "question_type": "extraction_only",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies one-sided stratified log-rank test for primary comparison",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies analysis stratification factors as ECOG and ICC option",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies Cox model as the treatment effect model",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies HR with two-sided 95% CI as reported effect estimate",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies KM curves and median OS summaries",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "P-007",
+        "design_element": "Hypotheses/Endpoints",
+        "design_element_other": "",
+        "question": "How is PFS handled analytically, and what are the main censoring/event rules relevant to new anti-cancer therapy, loss to follow-up, and absence of progression at analysis?",
+        "question_type": "derivation_required",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "Inputs used",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies PFS as investigator-assessed per RECIST v1.1",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies censoring at last tumor assessment when no progression/death at analysis",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies censoring at last tumor assessment before new anti-cancer therapy",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          },
+          {
+            "artifact": "output.json",
+            "dimension": "Calculated value",
+            "criteria": []
+          },
+          {
+            "artifact": "output.json",
+            "dimension": "Method",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies stratified log-rank and stratified Cox as main analytical methods",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "P-008",
+        "design_element": "Others",
+        "design_element_other": "",
+        "question": "Define treatment-emergent adverse event (TEAE) in this study, including the standard follow-up window and the special handling of immune-related AEs / drug-related SAEs.",
+        "question_type": "extraction_only",
+        "rubrics": [
+          {
+            "artifact": "output.json",
+            "dimension": "",
+            "criteria": [
+              {
+                "criterion": "Correctly identifies TEAE onset/worsening from baseline on or after first dose",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies 30-day post-last-dose / until new anticancer therapy rule",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies special 90-day rule for immune-related AEs regardless of new therapy",
+                "importance": "Medium",
+                "scoring": "Add"
+              },
+              {
+                "criterion": "Correctly identifies special handling of drug-related SAEs after treatment discontinuation",
+                "importance": "Medium",
+                "scoring": "Add"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
