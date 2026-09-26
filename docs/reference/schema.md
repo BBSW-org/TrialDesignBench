@@ -1,0 +1,3 @@
+# Schema
+
+::: trialdesignbench.schema

@@ -1,0 +1,3 @@
+# Scoring
+
+::: trialdesignbench.scoring

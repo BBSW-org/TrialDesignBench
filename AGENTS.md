@@ -1,42 +1,90 @@
 # Agent Guidelines
 
-These notes capture project-specific lessons and internal constraints for AI 
-agents working on `trialdesignbench`. For general usage instructions, CLI 
+These notes capture project-specific lessons and internal constraints for AI
+agents working on `trialdesignbench`. For general usage instructions, CLI
 commands, and artifact structure, refer to the [User Documentation](docs/articles/usage.md).
 
 ## Project Mission
 
-TrialDesignBench is a community-driven benchmark to evaluate AI agents in 
-clinical trial design, focusing on reproducibility and the drafting of new 
+TrialDesignBench is a community-driven benchmark to evaluate AI agents in
+clinical trial design, focusing on reproducibility and the drafting of new
 statistical designs.
+
+## Fixed architecture decisions (do not relitigate)
+
+1. **Harbor is the execution backend, not the benchmark definition.** We own
+   the task schema, task materialization, grader, scoring rules, aggregation,
+   and provenance. Harbor (v0.23.0) runs first-party agent harnesses in Docker.
+2. **Integrate with Harbor through files only**: the task directory format, a
+   generated `job.yaml` passed to `harbor run -c`, and the job directory it
+   writes. Never `import harbor` in package code. `harbor` is the optional
+   extra `trialdesignbench[harbor]` (Python 3.12+); the core stays light.
+3. **The grader is a pure function of (submission artifacts, task rubrics,
+   judge config).** It runs identically in a Harbor separate-verifier
+   container, standalone on any directory with `output.json` and `output.R`,
+   and in unit tests with `FakeJudge`.
+4. **Fail loudly.** A grading error must never produce a passing or silently
+   partial score. Every error is an explicit status in `grade.json` and zeroes
+   the reward. Read the "IMPORTANT NOTE FOR AI AGENTS" docstring in
+   `src/trialdesignbench/grade.py` before touching grading logic, and ask the
+   user when a case is ambiguous.
+5. **Rubrics are hidden from the agent.** They live only in each task's
+   `tests/` directory, which runs in a separate verifier container.
+6. **One shared, pinned Docker image** for agent and verifier environments.
+   Pins live in `trialdesignbench.environment.PINS`; the Dockerfile `ARG`
+   defaults must match them (a test enforces this).
+7. **Closed book is enforced, not requested**: allowlisted egress, harness-level
+   web tool disabling, a trajectory scan in the grader, and a network canary.
+
+## Module map
+
+```
+src/trialdesignbench/
+  schema.py        frozen pydantic models (extra="forbid", schema_version)
+  dataset.py       intake JSON -> canonical dataset; load/check/attach-document
+  build.py         canonical dataset -> Harbor task directories
+  environment/     Dockerfile, install scripts, image pins, build/check commands
+  judge.py         Judge protocol, AnthropicJudge (lazy `anthropic` import), FakeJudge
+  grade.py         deterministic checks + rubric judging + outputs (delicate)
+  scoring.py       versioned scoring rules, pure functions
+  run.py           job.yaml, auth validation, network host table, harbor invocation
+  canary.py        network canary Harbor task
+  report.py        job dirs / grade dirs -> ReportSummary + leaderboard
+  provenance.py    digests, versions, git SHA, image digest
+  templates/       packaged prompt template (versioned default)
+  cli/             typer + rich; core modules never import it
+```
+
+## Implementation notes
+
+- `tdb build` writes the agent allowlist as `allowed_hosts = []` with the
+  marker `# tdb:agent-allowed-hosts`; `tdb run` fills it in task copies at
+  `<jobs_dir>/<job_name>.tasks/`. Never place files Harbor should keep inside
+  a job directory: Harbor deletes subdirectories without `result.json` on
+  resume.
+- Separate verifiers do not get `tests/` uploaded, so `tests/Dockerfile` is
+  `FROM` the shared image and copies `test.sh` and `rubrics.json` in.
+- Harbor reads `reward` from `reward.json` as the headline metric; all values
+  must be finite numbers.
+- `tdb run` must never pass `--allow-agent-host` or `--allow-environment-host`,
+  add MCP servers, or allow an agent version different from the image.
+- Changing scoring rules requires bumping `SCORING_VERSION`. Changing the judge
+  prompt changes `judge_prompt_sha256()`, which is recorded in every grade.
+- Do not log `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or OAuth tokens; manifests
+  record variable names only.
 
 ## Development Environment
 
-- **Dependency Management:** Use `uv`. Local development should prefer 
-  `uv sync --dev` and `uv run ...`.
-- **Codex SDK:** Declared as a Git dependency in `pyproject.toml`.
-- **Linux CI Constraint:** The `openai-codex` runtime may not have compatible 
-  wheels for all Linux environments. Workflows should skip Codex installation 
-  on Linux if needed:
-  ```bash
-  uv sync --dev --no-install-package openai-codex --no-install-package openai-codex-cli-bin
-  uv run --no-sync <tool>
-  ```
-- **Python Pinning:** Pin workflows to the Python from `actions/setup-python` 
+- **Dependency Management:** Use `uv`. Local development should prefer
+  `uv sync --dev` and `uv run ...`. `[tool.uv] exclude-newer = "7 days"`.
+- **Python Pinning:** Pin workflows to the Python from `actions/setup-python`
   using `--python ... --no-python-downloads`.
-
-## Implementation Details
-
-### Codex Integration
-- **Model & Effort:** Default to `gpt-5.5` with `high` reasoning effort.
-- **SDK Surface:** The SDK does not currently expose `toggle_fast_mode`. 
-- **Lazy Imports:** Import `openai_codex` lazily to ensure conversion-only 
-  workflows and type checks don't require the local runtime.
-
-### Mathpix Integration
-- **Asynchronous Flow:** Upload -> Poll -> Download.
-- **Testing:** Keep API calls behind injectable transport boundaries for mocking.
-- **Secrets:** Do not log `MATHPIX_APP_ID` or `MATHPIX_APP_KEY`.
+- **Harbor for local checks:** install it in an isolated environment, for
+  example `uv venv tmp/harbor-venv --python 3.12` and
+  `uv pip install harbor==0.23.0`, then put `tmp/harbor-venv/bin` on `PATH`.
+  Do not add it as a core dependency.
+- **Docker/R tests:** tests needing R or Docker carry skip markers
+  (`requires_rscript`, `requires_docker` in `tests/conftest.py`).
 
 ## Quality Gates
 
@@ -49,9 +97,11 @@ uv run mypy .
 uv run pytest
 uv run zensical build
 ```
-*Note: Tools must skip `.venv` and `vendor` (configured in `pyproject.toml`).*
+*Note: Tools must skip `.venv`, `vendor`, and `deps-src` (configured in `pyproject.toml`).*
 
 ## Documentation Structure
 - **Public Docs:** Managed with Zensical in `docs/`.
 - **Vignettes:** Update `docs/articles/` for usage guides.
 - **Reference:** Update `docs/reference/` and `zensical.toml` for API changes.
+- `docs/index.md` and `docs/changelog.md` are synced from `README.md` and
+  `CHANGELOG.md` by `docs/scripts/sync.sh`.

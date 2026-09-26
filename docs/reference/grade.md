@@ -1,0 +1,3 @@
+# Grade
+
+::: trialdesignbench.grade

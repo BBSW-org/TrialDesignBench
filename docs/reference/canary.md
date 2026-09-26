@@ -1,0 +1,3 @@
+# Canary
+
+::: trialdesignbench.canary

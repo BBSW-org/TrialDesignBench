@@ -1,0 +1,41 @@
+name: Environment image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/trialdesignbench/environment/**"
+      - ".github/workflows/docker-image.yml"
+  pull_request:
+    paths:
+      - "src/trialdesignbench/environment/**"
+      - ".github/workflows/docker-image.yml"
+  schedule:
+    # Weekly: catch upstream breakage (base image, PPM snapshot, npm, git).
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+          uv sync --dev --python 3.14 --no-python-downloads
+      # Builds and loads the image locally; nothing is pushed.
+      - name: Build image
+        run: uv run --no-sync tdb env build --tdb-source local
+      - name: Check image
+        run: uv run --no-sync tdb env check
+      - name: Image tests
+        run: uv run --no-sync pytest tests/test_environment.py
