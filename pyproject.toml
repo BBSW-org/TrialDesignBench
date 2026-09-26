@@ -1,14 +1,12 @@
 [project]
 name = "trialdesignbench"
-version = "0.2.2"
+version = "1.0.0"
 description = "Evaluate whether AI agents can create efficient, reproducible, and safe clinical trial design"
 authors = [{ name = "Nan Xiao", email = "me@nanx.me" }]
 dependencies = [
-    "openai-codex",
     "pydantic>=2.13.4",
-    "python-dotenv>=1.2.2",
     "rich>=15.0.0",
-    "tqdm>=4.67.3",
+    "tomli>=2.2.1; python_version < '3.11'",
     "typer>=0.25.1",
 ]
 readme = "README.md"
@@ -37,9 +35,16 @@ classifiers = [
 
 requires-python = ">= 3.10"
 
+[project.optional-dependencies]
+# The Anthropic SDK powers the default rubric judge (`tdb grade`).
+judge = ["anthropic>=1.7.0"]
+# Harbor runs agents in Docker (`tdb run`, `tdb regrade`). It requires
+# Python 3.12+, so it is an optional extra; the core package stays light.
+harbor = ["harbor==0.23.0; python_version >= '3.12'"]
+
 [project.scripts]
-tdb = "trialdesignbench.cli:main"
-trialdesignbench = "trialdesignbench.cli:main"
+tdb = "trialdesignbench.cli.main:main"
+trialdesignbench = "trialdesignbench.cli.main:main"
 
 [build-system]
 requires = ["uv_build>=0.12.9,<0.13.0"]
@@ -50,27 +55,33 @@ source-exclude = ["/data", "/docs", "/AGENTS.md", "/zensical.toml", "/uv.lock"]
 wheel-exclude = ["/data", "/docs", "/AGENTS.md", "/zensical.toml", "/uv.lock"]
 
 [tool.isort]
-skip = [".venv", "vendor"]
+skip = [".venv", "vendor", "deps-src"]
+profile = "black"
 
 [tool.mypy]
-exclude = ["vendor/"]
+exclude = ["vendor/", "deps-src/", "tmp/"]
+plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-norecursedirs = [".venv", "vendor"]
+norecursedirs = [".venv", "vendor", "deps-src", "tmp"]
 
-[tool.uv.sources]
-openai-codex = { git = "https://github.com/openai/codex.git", subdirectory = "sdk/python" }
+[tool.uv]
+# Supply chain hygiene: never resolve packages published in the last 7 days.
+exclude-newer = "7 days"
 
 [dependency-groups]
 dev = [
+    "anthropic>=1.7.0",
     "isort>=8.0.1",
     "mkdocstrings-python>=2.0.3",
     "mypy>=2.0.0",
     "pandas-stubs>=2.0.0",
-    "pypdf>=6.11.0",
     "pytest>=9.0.3",
     "ruff>=0.15.12",
     "types-openpyxl>=3.1.0",
     "zensical>=0.0.42",
 ]
+
+[tool.ruff]
+extend-exclude = ["deps-src", "vendor", "tmp"]

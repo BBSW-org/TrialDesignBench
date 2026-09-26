@@ -27,9 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --dev --python 3.14 --no-python-downloads \
-            --no-install-package openai-codex \
-            --no-install-package openai-codex-cli-bin
+          uv sync --dev --python 3.14 --no-python-downloads
 
       - name: Run Type Checks
         run: |

@@ -1,65 +1,69 @@
-# Step 1 Usage
+# Overview
 
-Workflow step 1 starts from an individual SAP or protocol PDF and produces a
-local reproduction run directory. The baseline implementation uses Mathpix for
-PDF OCR and a local Codex SDK/runtime for the agent execution step.
+TrialDesignBench is a thin evaluation framework. It owns the task schema,
+task materialization, the grader, scoring rules, aggregation, and provenance.
+[Harbor](https://github.com/harbor-framework/harbor) is the execution backend:
+it runs first-party agent harnesses (Claude Code, Codex CLI) inside Docker
+with concurrency, retries, trajectories, and token accounting.
 
-## Create a workspace
+The two tools meet only through files:
 
-```bash
-uv run tdb init tdb-workspace
+- the Harbor task directory format (`task.toml`, `instruction.md`,
+  `environment/`, `tests/`),
+- a generated `job.yaml` passed to `harbor run -c`,
+- the job directory Harbor writes (`result.json`, `verifier/reward.json`,
+  `verifier/reward-details.json`, `agent/trajectory.json`).
+
+TrialDesignBench never imports Harbor, so the core package stays light and
+runs on Python 3.10+. Harbor is an optional extra that needs Python 3.12+.
+
+## Pipeline
+
+```text
+curated intake JSON ──tdb dataset import──▶ canonical dataset
+                                             │ tdb build
+                                             ▼
+                                     Harbor task directories
+                                             │ tdb run  (harbor run -c job.yaml)
+                                             ▼
+                                     Harbor job directory ──tdb report──▶ report.json
+                                             ▲
+                            tdb regrade (harbor job regrade)
 ```
 
-The workspace contains:
+Grading is decoupled from inference. `tdb grade` is a pure function of the
+submission artifacts, the hidden rubrics, and the judge configuration, so it
+runs identically inside Harbor's verifier container, standalone on any
+directory with `output.json` and `output.R`, and in tests.
 
-- `.env` for Mathpix and Codex configuration.
-- `.gitignore` that excludes credentials, converted documents, and run outputs.
-- `converted/` for Mathpix Markdown and metadata.
-- `runs/` for prompts, Codex responses, and run summaries.
-
-## Configure credentials
+## Quick start
 
 ```bash
-uv run tdb configure --workspace tdb-workspace
+# 1. Canonical dataset from curated submissions (+ protocol/SAP Markdown)
+uv run tdb dataset import data/json/*.json --out tmp/dataset --documents path/to/docs
+uv run tdb dataset check tmp/dataset
+
+# 2. Shared environment image (R, pinned CRAN snapshot, agent CLIs, skills)
+uv run tdb env build
+uv run tdb env check --canary
+
+# 3. Harbor tasks
+uv run tdb build tmp/dataset --out tmp/tasks
+
+# 4. Run agents (needs `trialdesignbench[harbor]` on Python 3.12+)
+uv run tdb run --tasks tmp/tasks --agent claude-code --model anthropic/claude-opus-5 \
+  --n-attempts 3 --canary
+
+# 5. Aggregate
+uv run tdb report jobs/<job-name> --format md
 ```
 
-This writes `MATHPIX_APP_ID`, `MATHPIX_APP_KEY`, `CODEX_MODEL`, and optionally
-`CODEX_BIN` to `tdb-workspace/.env`. The default model is `gpt-5.5`; Codex runs
-default to high reasoning effort.
+Each step has its own article:
 
-## Convert only
-
-```bash
-uv run tdb convert path/to/sap.pdf --workspace tdb-workspace
-```
-
-Add `--save-tex-zip` to request Mathpix's LaTeX ZIP conversion in addition to
-the Mathpix Markdown text.
-
-TrialDesignBench reuses existing non-empty `converted/<pdf-stem>.mmd` and
-`converted/<pdf-stem>.mathpix.json` files by default. Add `--force` when you
-need to submit the PDF to Mathpix again. Use `--http-timeout` to raise the
-per-request HTTP timeout for large uploads or slow connections; `--timeout`
-continues to control the overall Mathpix polling deadline.
-
-## Convert and run Codex
-
-```bash
-uv run tdb run path/to/sap.pdf --workspace tdb-workspace --case-id tdb-001
-```
-
-The command saves:
-
-- `converted/<pdf-stem>.mmd`
-- `converted/<pdf-stem>.mathpix.json`
-- `runs/<case-id>/prompt.md`
-- `runs/<case-id>/codex_response.md`
-- `runs/<case-id>/codex_run.json`
-- `runs/<case-id>.step1.json`
-
-Use `--no-codex` when you only want to test ingestion while still using the same
-output layout.
-
-If the Codex step fails after conversion, the pipeline still writes
-`runs/<case-id>.step1.json` with the conversion artifact and `codex_run` set to
-`null`, so the workspace state remains inspectable before retrying.
+- [Dataset](dataset.md): intake import, the canonical format, documents.
+- [Environment](environment.md): the shared image and the network policy.
+- [Build](build.md): Harbor task materialization.
+- [Run](run.md): `job.yaml`, auth modes, matrices, regrading.
+- [Grade](grade.md): deterministic checks, the rubric judge, scoring.
+- [Report](report.md): aggregation and leaderboards.
+- [Reproducibility](reproducibility.md): what is pinned and recorded.

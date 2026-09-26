@@ -1,3 +1,0 @@
-# Models
-
-::: trialdesignbench.models

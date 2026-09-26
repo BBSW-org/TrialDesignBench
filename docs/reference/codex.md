@@ -1,3 +1,0 @@
-# Codex
-
-::: trialdesignbench.codex
