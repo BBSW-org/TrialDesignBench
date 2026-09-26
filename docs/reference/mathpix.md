@@ -1,3 +1,0 @@
-# Mathpix
-
-::: trialdesignbench.mathpix

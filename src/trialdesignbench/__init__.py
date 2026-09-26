@@ -1,41 +1,12 @@
-"""TrialDesignBench workflow tooling."""
+"""TrialDesignBench: a thin evaluation framework for AI agents in clinical
+trial design.
 
-from importlib.metadata import PackageNotFoundError, version
+Harbor runs agents; this package owns the task schema, task materialization,
+grading, scoring, aggregation, and provenance.
+"""
 
-from trialdesignbench.codex import CodexRunner, LocalCodexRunner
-from trialdesignbench.config import (
-    DEFAULT_CODEX_EFFORT,
-    DEFAULT_CODEX_MODEL,
-    TdbConfig,
-    configure_workspace,
-    create_workspace,
-    load_config,
-)
-from trialdesignbench.mathpix import MathpixClient, MathpixError
-from trialdesignbench.models import CodexRunArtifact, ConversionArtifact, StepOneResult
-from trialdesignbench.pipeline import StepOnePipeline
-from trialdesignbench.prompt import build_reproduction_prompt
+from trialdesignbench.provenance import package_version
 
-try:
-    __version__ = version("trialdesignbench")
-except PackageNotFoundError:
-    __version__ = "0.0.0"
+__version__ = package_version()
 
-__all__ = [
-    "CodexRunArtifact",
-    "CodexRunner",
-    "ConversionArtifact",
-    "DEFAULT_CODEX_EFFORT",
-    "DEFAULT_CODEX_MODEL",
-    "LocalCodexRunner",
-    "MathpixClient",
-    "MathpixError",
-    "StepOnePipeline",
-    "StepOneResult",
-    "TdbConfig",
-    "__version__",
-    "build_reproduction_prompt",
-    "configure_workspace",
-    "create_workspace",
-    "load_config",
-]
+__all__ = ["__version__"]

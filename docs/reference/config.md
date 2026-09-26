@@ -1,3 +1,0 @@
-# Configuration
-
-::: trialdesignbench.config
