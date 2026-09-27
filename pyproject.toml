@@ -55,7 +55,7 @@ source-exclude = ["/data", "/docs", "/AGENTS.md", "/zensical.toml", "/uv.lock"]
 wheel-exclude = ["/data", "/docs", "/AGENTS.md", "/zensical.toml", "/uv.lock"]
 
 [tool.isort]
-skip = [".venv", "vendor", "deps-src"]
+skip = [".venv", "vendor", "deps-src", "tmp"]
 profile = "black"
 
 [tool.mypy]
