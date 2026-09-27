@@ -70,13 +70,27 @@ pin.
 Hostnames are exact (no wildcards) to keep the policy portable. `tdb run`
 never passes `--allow-agent-host` or `--allow-environment-host`.
 
+Harbor enforces the allowlist with an egress sidecar that shares the task
+container's network namespace: nftables redirects all outbound TCP to a
+transparent proxy that matches the TLS SNI or HTTP `Host` against the
+allowlist and closes everything else; other protocols are rejected except
+DNS and ICMP. Only the sidecar has network capabilities, so nothing in the
+image could enforce more than this. Probe runs confirmed that it blocks
+shell commands and the CLIs' own URL fetch tools for every agent; see
+[Closed book](closed-book.md#how-harbor-enforces-the-allowlist).
+
 The verifier container uses its own allowlist with only the judge API host
 (`api.anthropic.com`), and the grader is preinstalled so it needs no PyPI.
 
 ### 2. Server-side web tools
 
-Provider-side web tools never touch the container network, so they are
-disabled in the harness:
+Web tools that run on the model provider's servers are reached through the
+allowlisted model API host, so the allowlist cannot stop them. Probe runs
+showed Claude Code's `WebSearch`, Codex's `web_search`, and the Antigravity
+SDK's `search_web` returning live results under the agent allowlist (see
+[Closed book](closed-book.md#where-each-agents-web-tools-run)). They are
+therefore disabled in the harness, and an agent without such a switch is
+refused:
 
 - Claude Code: `disallowed_tools=WebSearch,WebFetch` plus a native settings
   file with `permissions.deny` for the same tools.
@@ -87,14 +101,19 @@ disabled in the harness:
 - OpenCode: `webfetch` and `websearch` denied through `permission`, which
   removes them from the model's tool list.
 - Antigravity (`antigravity-sdk`, `antigravity-cli`): **unsupported.**
-  Harbor's SDK runner enables every tool, including `search_web` and
-  `read_url_content`, and its CLI adapter rewrites the settings file on every
-  run; neither accepts an option to disable web tools. `tdb run` refuses
+  Harbor's SDK runner enables every tool and never sets the SDK's
+  `disabled_tools`, and its CLI adapter rewrites the settings file on every
+  run; neither accepts an option to disable web tools. `search_web` runs
+  inside the Gemini API call, so the allowlist does not stop it
+  (`read_url_content` is a local fetch and is blocked). `tdb run` refuses
   them.
 - No MCP servers are ever added.
 
-The grader then scans the ATIF trajectory for web tool calls, URLs in tool
-arguments, and network shell commands (see [Grade](grade.md)).
+The CLIs' local fetch tools (Claude Code `WebFetch`, OpenCode `webfetch`,
+Grok Build `web_fetch`) are blocked by the allowlist anyway; disabling them
+too saves failed attempts. The grader then scans the ATIF trajectory for
+web tool calls, URLs in tool arguments, and network shell commands (see
+[Grade](grade.md)).
 
 ### 3. Parametric memory
 

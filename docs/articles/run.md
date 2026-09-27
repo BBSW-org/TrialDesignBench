@@ -67,6 +67,8 @@ fills them in the task copies:
 
 The per-agent hosts are listed in [Agents](agents.md#network) and the policy
 itself in [Environment](environment.md#network-policy-closed-book).
+[Closed book](closed-book.md) explains how Harbor enforces the allowlist and
+why it alone does not make an agent closed book.
 
 ## Matrices
 

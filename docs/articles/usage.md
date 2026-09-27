@@ -66,6 +66,8 @@ Each step has its own article:
 - [Environment](environment.md): the shared image and the network policy.
 - [Build](build.md): Harbor task materialization.
 - [Agents](agents.md): supported agents, credentials, closed-book settings.
+- [Closed book](closed-book.md): how egress control works, which agent web
+  tools run provider-side, and why some agents are refused.
 - [Run](run.md): `job.yaml`, network allowlists, matrices, regrading.
 - [Grade](grade.md): deterministic checks, rubric judging, scoring.
 - [Judge](judge.md): judge model, credentials, and network access.

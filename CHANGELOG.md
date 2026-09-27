@@ -6,6 +6,15 @@
 
 - Update the Docker image bundled dependency versions: R 4.6.1, uv 0.12.19, Node 24.21.0 (#82).
 
+### Documentation
+
+- Add a new article about closed book runs: how Harbor's egress control works
+  and what it cannot stop, probe results showing which agent web tools run on
+  the provider's servers and which the allowlist already blocks,
+  provider-side controls, alternatives considered, what relaxing the
+  prevented or refused policy would require, and a reusable probe task.
+  The Environment, Agents, Grade, Run, and Usage articles now all link to it.
+
 ## trialdesignbench 1.1.0
 
 ### New features

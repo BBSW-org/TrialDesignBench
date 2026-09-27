@@ -45,6 +45,11 @@ The URL rule is deliberately strict: a URL written into a file through a tool
 call (for example a comment in `output.R`) also counts. Review
 `network_violations` in `grade.json` when a trial is zeroed.
 
+The web tool names cover the supported agents. Before an agent is added, its
+provider-side tool names must appear in this list and in a probe trajectory
+(see [Closed book](closed-book.md#where-each-agents-web-tools-run)); a call
+that Harbor does not record cannot be detected here.
+
 ## Rubric judging
 
 Each question's `Add` criteria go to the judge in one call. The judge sees the
