@@ -54,7 +54,7 @@ uv run tdb build tmp/dataset --out tmp/tasks
 # 4. Run agents (needs `trialdesignbench[harbor]` on Python 3.12+)
 export ANTHROPIC_API_KEY=...   # the agent's model API key and the judge's key
 uv run tdb run --tasks tmp/tasks --agent claude-code --model anthropic/claude-opus-5 \
-  --n-attempts 3 --canary
+  --effort high --n-attempts 3 --canary
 
 # 5. Aggregate
 uv run tdb report jobs/<job-name> --format md
@@ -65,7 +65,8 @@ Each step has its own article:
 - [Dataset](dataset.md): intake import, the canonical format, documents.
 - [Environment](environment.md): the shared image and the network policy.
 - [Build](build.md): Harbor task materialization.
-- [Agents](agents.md): supported agents, credentials, closed-book settings.
+- [Agents](agents.md): supported agents, credentials, reasoning effort,
+  closed-book settings.
 - [Closed book](closed-book.md): how egress control works, which agent web
   tools run provider-side, and why some agents are refused.
 - [Run](run.md): `job.yaml`, network allowlists, matrices, regrading.

@@ -2,6 +2,22 @@
 
 ## trialdesignbench (development version)
 
+### New features
+
+- `tdb run --effort <level>` sets the model's reasoning effort as a
+  first-class setting next to `--agent` and `--model`. The level is checked
+  against what each agent accepts before launch (Claude Code and OpenCode
+  silently ignore levels they do not know), mapped to the agent's Harbor
+  kwarg (`reasoning_effort`; `variant` for `opencode`), recorded in
+  `tdb-run.json` (`agents[].effort`), and read back by `tdb report`, which
+  now groups results by agent × model × effort and shows the level in the
+  leaderboard. `--effort` is given once for all agents or once per `--agent`
+  (`default` keeps the harness default), and the same agent and model may
+  run at several levels in one job. Without `--effort`, `tdb run` warns that
+  the harness default depends on the model and CLI version. The new
+  `trialdesignbench.agents.Effort` record documents each agent's kwarg and
+  levels; the Agents article lists them with each CLI's behavior.
+
 ### Maintenance
 
 - Update the Docker image bundled dependency versions: R 4.6.1, uv 0.12.19, Node 24.21.0 (#82).

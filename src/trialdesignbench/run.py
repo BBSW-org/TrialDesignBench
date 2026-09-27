@@ -67,20 +67,41 @@ class AgentRequest:
     agent: str
     model: str
     version: str | None = None
+    effort: str | None = None
+    """Reasoning effort level; `None` or `agents.DEFAULT_EFFORT` keep the
+    harness default."""
 
 
 def parse_agent_pairs(
-    agents: Sequence[str], models: Sequence[str], versions: Sequence[str] = ()
+    agents: Sequence[str],
+    models: Sequence[str],
+    versions: Sequence[str] = (),
+    efforts: Sequence[str] = (),
 ) -> list[AgentRequest]:
-    """Pair repeated `--agent`/`--model` (and optional versions)."""
+    """Pair repeated `--agent`/`--model` with optional versions and efforts.
+
+    `--effort` is given once for every agent, or once per `--agent`.
+    """
     if not agents:
         raise RunError("at least one --agent is required")
     if len(agents) != len(models):
         raise RunError("--agent and --model must be given the same number of times")
     if versions and len(versions) != len(agents):
         raise RunError("--agent-version must be given once per --agent, or not at all")
+    if len(efforts) == 1:
+        efforts = tuple(efforts) * len(agents)
+    elif efforts and len(efforts) != len(agents):
+        raise RunError(
+            "--effort must be given once (for every --agent), once per --agent, "
+            "or not at all"
+        )
     return [
-        AgentRequest(a, m, versions[i] if versions else None)
+        AgentRequest(
+            a,
+            m,
+            versions[i] if versions else None,
+            efforts[i] if efforts else None,
+        )
         for i, (a, m) in enumerate(zip(agents, models))
     ]
 
@@ -98,6 +119,7 @@ def agent_config(
         provider = agents.model_provider(profile, request.model)
         hosts = agents.api_hosts(profile, auth, provider)
         auth_env = agents.resolve_auth(profile, auth, provider, env)
+        effort_kwargs = agents.effort_kwargs(profile, request.effort)
     except AgentError as exc:
         raise RunError(str(exc)) from exc
     version = request.version or profile.version
@@ -113,7 +135,11 @@ def agent_config(
             f"{profile.version} (ImagePins.{profile.version_pin}); change the pin "
             "and rebuild the image"
         )
-    kwargs: dict[str, Any] = {"version": version, **copy.deepcopy(dict(profile.kwargs))}
+    kwargs: dict[str, Any] = {
+        "version": version,
+        **copy.deepcopy(dict(profile.kwargs)),
+        **effort_kwargs,
+    }
     agent_env = {**profile.env, **auth_env}
     config: dict[str, Any] = {
         "name": request.agent,
@@ -126,6 +152,7 @@ def agent_config(
         agent=request.agent,
         model=request.model,
         agent_version=version,
+        effort=effort_kwargs.get(profile.effort.kwarg),
         kwargs=copy.deepcopy(kwargs),
         env_keys=tuple(sorted(agent_env)),
         allowed_hosts=hosts,
@@ -307,6 +334,13 @@ def plan_run(
         if not verified:
             warnings.append(
                 f"host list for {req.agent} with --auth {auth} is unverified: {note}"
+            )
+    for spec in specs:
+        if spec.effort is None:
+            warnings.append(
+                f"reasoning effort for {spec.agent} not set: trials run at the "
+                "harness default, which depends on the model and CLI version and "
+                "is not recorded. Pass --effort to pin it."
             )
     if len({(s.allowed_hosts, s.setup_hosts) for s in specs}) > 1:
         warnings.append(

@@ -11,7 +11,9 @@ agent. Each `AgentProfile` in `AGENTS` records everything `tdb run` needs:
   preinstalled in the image or installed by Harbor during agent setup. In
   the latter case `setup_hosts` are reachable during setup only;
 - the Harbor kwargs and env vars that disable web tools and nonessential
-  traffic, and the disabled tool names recorded for provenance.
+  traffic, and the disabled tool names recorded for provenance;
+- how `--effort` reaches the agent (`Effort`): the Harbor kwarg that carries
+  the reasoning effort level and the levels it accepts.
 
 Harbor agents that are not in `AGENTS` are refused; `REFUSED_AGENTS` explains
 why for the notable ones. To add an agent, check its Harbor adapter (for
@@ -75,6 +77,38 @@ class Subscription:
     note: str = ""
 
 
+EFFORT_LEVELS: tuple[str, ...] = (
+    "none",
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+)
+"""Canonical reasoning effort levels, lowest to highest. Every agent accepts a
+subset (`Effort.levels`), and every model a subset of that."""
+
+DEFAULT_EFFORT = "default"
+"""`--effort` value that leaves the harness default in place (no kwarg)."""
+
+
+@dataclass(frozen=True)
+class Effort:
+    """How `--effort` sets an agent's reasoning effort through Harbor."""
+
+    kwarg: str
+    """Harbor kwarg carrying the level (see `harbor agent schema <name>`)."""
+    levels: tuple[str, ...]
+    """Levels the kwarg accepts, lowest to highest. Harbor validates these
+    for `reasoning_effort` kwargs; for free-string kwargs the check here is
+    the only one before the trial runs."""
+    how: str
+    """What Harbor turns the kwarg into."""
+    note: str = ""
+    """Default behavior and what happens with a level the model lacks."""
+
+
 @dataclass(frozen=True)
 class AgentProfile:
     """How to run one Harbor agent closed book."""
@@ -86,6 +120,8 @@ class AgentProfile:
     """`ImagePins` field holding the pinned CLI version."""
     preinstalled: bool
     """True when the image ships the CLI and Harbor skips its install."""
+    effort: Effort
+    """How `--effort` reaches the agent."""
     setup_hosts: tuple[str, ...] = ()
     """Hosts Harbor's install step needs; reachable during agent setup only."""
     kwargs: Mapping[str, Any] = field(default_factory=dict)
@@ -127,6 +163,15 @@ AGENTS: tuple[AgentProfile, ...] = (
         providers=("anthropic",),
         version_pin="claude_code_version",
         preinstalled=True,
+        effort=Effort(
+            kwarg="reasoning_effort",
+            levels=("low", "medium", "high", "xhigh", "max"),
+            how="`claude --effort <level>`",
+            note="unset, the CLI uses the model's default level (`high` for "
+            "most models). A level the model does not support runs as the "
+            "highest supported level at or below it; a value outside the list "
+            "is ignored with a warning, so it is refused here.",
+        ),
         kwargs={
             "disallowed_tools": ",".join(_CLAUDE_CODE_DENIED),
             "config": {"permissions": {"deny": _CLAUDE_CODE_DENIED}},
@@ -153,6 +198,15 @@ AGENTS: tuple[AgentProfile, ...] = (
         providers=("openai",),
         version_pin="codex_version",
         preinstalled=True,
+        effort=Effort(
+            kwarg="reasoning_effort",
+            levels=EFFORT_LEVELS,
+            how="`codex -c model_reasoning_effort=<level>`",
+            note="unset, Codex uses its default (`medium`). The value is sent "
+            "to the API as `reasoning.effort`, which enumerates exactly these "
+            "levels; a level the model does not support fails the request "
+            "and the trial.",
+        ),
         kwargs={"web_search": "disabled"},
         disabled_tools=("web_search",),
         subscription=Subscription(
@@ -176,6 +230,14 @@ AGENTS: tuple[AgentProfile, ...] = (
         # Harbor's install runs `apt-get install ca-certificates` and x.ai's
         # installer on every setup.
         setup_hosts=(*_APT_HOSTS, "x.ai"),
+        effort=Effort(
+            kwarg="reasoning_effort",
+            levels=EFFORT_LEVELS,
+            how="`grok --reasoning-effort <level>`",
+            note="unset, grok uses the model's default (`high` on grok-4.x). "
+            "A model accepts only the levels its menu advertises (grok-4.7: "
+            "low, medium, high, xhigh); reasoning cannot be disabled.",
+        ),
         # The image also pins these in /etc/grok/requirements.toml.
         kwargs={
             "disable_web_search": True,
@@ -193,6 +255,17 @@ AGENTS: tuple[AgentProfile, ...] = (
         preinstalled=False,
         # Harbor's install runs nvm and `npm i -g opencode-ai` on every setup.
         setup_hosts=_NVM_NPM_HOSTS,
+        effort=Effort(
+            kwarg="variant",
+            levels=EFFORT_LEVELS,
+            how="`opencode --variant <level>`",
+            note="unset, OpenCode sends no effort and the provider default "
+            "applies. Variant names are the model's `reasoning_options` "
+            "effort values in the catalog shipped in the image "
+            f"(`{environment.OPENCODE_MODELS_PATH}`); OpenCode silently "
+            "ignores a variant the model does not define, so check the "
+            "catalog for the model first.",
+        ),
         kwargs={
             "opencode_config": {
                 "autoupdate": False,
@@ -290,6 +363,37 @@ def hosts_verified(profile: AgentProfile, auth: AuthMode) -> tuple[bool, str]:
         f"confirm with `tdb env check --canary --agent {profile.name}` and a smoke run"
     )
     return profile.verified, note
+
+
+def effort_kwargs(profile: AgentProfile, level: str | None) -> dict[str, str]:
+    """Harbor kwargs for a reasoning effort level.
+
+    `None` or `DEFAULT_EFFORT` leave the harness default in place and return
+    no kwargs. Any other level must be one the agent accepts; this check runs
+    before launch because Claude Code and OpenCode silently ignore a level
+    they do not know.
+    """
+    if level is None or level == DEFAULT_EFFORT:
+        return {}
+    if level not in profile.effort.levels:
+        raise AgentError(
+            f"{profile.name} does not accept --effort {level!r}; levels: "
+            f"{', '.join(profile.effort.levels)} (or {DEFAULT_EFFORT})"
+        )
+    return {profile.effort.kwarg: level}
+
+
+def effort_from_kwargs(agent: str, kwargs: Mapping[str, Any]) -> str | None:
+    """The reasoning effort level in a Harbor agent config, if one was set.
+
+    Used by `tdb report` to read the level back from each trial's
+    `result.json`; `None` for the harness default or an unknown agent.
+    """
+    profile = _BY_NAME.get(agent)
+    if profile is None:
+        return None
+    value = kwargs.get(profile.effort.kwarg)
+    return None if value is None else str(value)
 
 
 def resolve_auth(

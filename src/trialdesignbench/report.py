@@ -17,6 +17,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from trialdesignbench import agents
 from trialdesignbench.build import TASK_ORG
 from trialdesignbench.canary import CANARY_TASK_ID, canary_result
 from trialdesignbench.provenance import package_version, utc_now
@@ -92,6 +93,7 @@ def _summary_from_grade(
     reward: dict[str, Any] | None,
     exception: str | None,
     usage: tuple[int | None, int | None, float | None] = (None, None, None),
+    effort: str | None = None,
 ) -> TrialSummary:
     tokens_in, tokens_out, cost = usage
     common = {
@@ -99,6 +101,7 @@ def _summary_from_grade(
         "task_id": task_id,
         "agent": agent,
         "model": model,
+        "effort": effort,
         "input_tokens": tokens_in,
         "output_tokens": tokens_out,
         "cost_usd": cost,
@@ -155,10 +158,14 @@ def load_job(job_dir: Path) -> tuple[list[_Trial], set[str], list[str]]:
             continue
         task_id = _task_id(str(result.get("task_name", trial_dir.name)))
         agent = (result.get("agent_info") or {}).get("name") or "unknown"
-        model = ((result.get("config") or {}).get("agent") or {}).get("model_name") or (
+        agent_cfg = (result.get("config") or {}).get("agent") or {}
+        model = agent_cfg.get("model_name") or (
             ((result.get("agent_info") or {}).get("model_info") or {}).get("name")
             or "unknown"
         )
+        # The effort level `tdb run` set is in the recorded kwargs; None means
+        # the harness default.
+        effort = agents.effort_from_kwargs(agent, agent_cfg.get("kwargs") or {})
         exc = result.get("exception_info")
         exception = (
             f"{exc['exception_type']}: {exc['exception_message']}" if exc else None
@@ -184,6 +191,7 @@ def load_job(job_dir: Path) -> tuple[list[_Trial], set[str], list[str]]:
             reward if isinstance(reward, dict) else None,
             exception,
             _usage(trial_dir, result),
+            effort,
         )
         trials.append(_Trial(summary, grade))
     return trials, expected, canary_failures
@@ -226,15 +234,23 @@ def _mean_dicts(dicts: Iterable[dict[str, float]]) -> dict[str, float]:
     return {k: sum(v) / len(v) for k, v in sorted(acc.items())}
 
 
+def effort_label(effort: str | None) -> str:
+    """Display label for an effort level (`default` for the harness default)."""
+    return effort if effort is not None else agents.DEFAULT_EFFORT
+
+
 def aggregate(
     trials: Sequence[_Trial], task_ids: Sequence[str], threshold: float
 ) -> list[AgentAggregate]:
-    """Per agent x model aggregates; unattempted tasks count as 0."""
-    groups: dict[tuple[str, str], list[_Trial]] = {}
+    """Per agent x model x effort aggregates; unattempted tasks count as 0."""
+    groups: dict[tuple[str, str, str | None], list[_Trial]] = {}
     for t in trials:
-        groups.setdefault((t.summary.agent, t.summary.model), []).append(t)
+        key = (t.summary.agent, t.summary.model, t.summary.effort)
+        groups.setdefault(key, []).append(t)
     out = []
-    for (agent, model), group in sorted(groups.items()):
+    for (agent, model, effort), group in sorted(
+        groups.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2] or "")
+    ):
         by_task: dict[str, list[_Trial]] = {}
         for t in group:
             by_task.setdefault(t.summary.task_id, []).append(t)
@@ -261,6 +277,7 @@ def aggregate(
             AgentAggregate(
                 agent=agent,
                 model=model,
+                effort=effort,
                 # Over the full benchmark: an unattempted task counts as 0.
                 mean_score=sum(t.mean for t in tasks) / n_total if n_total else 0.0,
                 pass_rate=sum(t.all_attempts_pass for t in tasks) / n_total
@@ -337,6 +354,7 @@ def leaderboard(report: ReportSummary) -> list[dict[str, Any]]:
             "rank": 0,
             "agent": a.agent,
             "model": a.model,
+            "effort": effort_label(a.effort),
             "mean_score": round(a.mean_score, 4),
             "pass_rate": round(a.pass_rate, 4),
             "tasks_attempted": a.n_tasks_attempted,
@@ -361,17 +379,20 @@ def render_markdown(report: ReportSummary) -> str:
             f"{report.threshold:g}; {len(report.task_ids)} task(s)."
         ),
         "",
-        "| Rank | Agent | Model | Mean score | Pass rate | Attempted | Errored trials |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        (
+            "| Rank | Agent | Model | Effort | Mean score | Pass rate | Attempted "
+            "| Errored trials |"
+        ),
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for r in leaderboard(report):
         lines.append(
-            f"| {r['rank']} | {r['agent']} | {r['model']} | {r['mean_score']:.4f} | "
-            f"{r['pass_rate']:.4f} | {r['tasks_attempted']}/{r['tasks_total']} | "
-            f"{r['errored_trials']} |"
+            f"| {r['rank']} | {r['agent']} | {r['model']} | {r['effort']} | "
+            f"{r['mean_score']:.4f} | {r['pass_rate']:.4f} | "
+            f"{r['tasks_attempted']}/{r['tasks_total']} | {r['errored_trials']} |"
         )
     for a in report.agents:
-        lines += ["", f"## {a.agent} / {a.model}", ""]
+        lines += ["", f"## {a.agent} / {a.model} / {effort_label(a.effort)}", ""]
         lines += [
             "| Task | Attempts | Mean | Min | Max | All pass |",
             "| --- | --- | --- | --- | --- | --- |",
