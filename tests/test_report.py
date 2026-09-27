@@ -40,7 +40,9 @@ def _trial(
     name: str,
     task: str,
     *,
+    agent: str = "claude-code",
     model: str = "anthropic/m",
+    kwargs: dict[str, object] | None = None,
     exception: bool = False,
 ) -> Path:
     trial = job / name
@@ -48,8 +50,8 @@ def _trial(
     result = {
         "task_name": f"trialdesignbench/{task}",
         "trial_name": name,
-        "agent_info": {"name": "claude-code", "version": "1"},
-        "config": {"agent": {"model_name": model}},
+        "agent_info": {"name": agent, "version": "1"},
+        "config": {"agent": {"model_name": model, "kwargs": kwargs or {}}},
         "agent_result": {"n_input_tokens": 100, "n_output_tokens": 10, "cost_usd": 0.5},
         "exception_info": {
             "exception_type": "AgentTimeoutError",
@@ -108,6 +110,37 @@ def test_leaderboard_and_markdown(job: Path) -> None:
     assert "a__3" in md
 
 
+def test_effort_separates_leaderboard_rows(
+    job: Path, make_submission: Callable[..., Path], rubrics_path: Path
+) -> None:
+    """Trials at different effort levels never merge into one row."""
+    t = _trial(job, "b__1", FIXTURE_TASK_ID, kwargs={"reasoning_effort": "max"})
+    _write_grade(make_submission, rubrics_path, t / "verifier", "s4", "pass")
+    t = _trial(
+        job, "c__1", FIXTURE_TASK_ID, agent="opencode", kwargs={"variant": "high"}
+    )
+    _write_grade(make_submission, rubrics_path, t / "verifier", "s5", "pass")
+    report = build_report([job])
+    assert [(a.agent, a.model, a.effort) for a in report.agents] == [
+        ("claude-code", "anthropic/m", None),  # the fixture's default-effort trials
+        ("claude-code", "anthropic/m", "max"),
+        ("opencode", "anthropic/m", "high"),
+    ]
+    by_name = {t.trial_name: t.effort for t in report.trials}
+    assert by_name["a__1"] is None and by_name["b__1"] == "max"
+    assert by_name["c__1"] == "high"
+    rows = leaderboard(report)
+    assert [(r["agent"], r["effort"]) for r in rows] == [
+        ("claude-code", "max"),
+        ("opencode", "high"),
+        ("claude-code", "default"),
+    ]
+    md = render_markdown(report)
+    assert "| Effort |" in md
+    assert "## claude-code / anthropic/m / max" in md
+    assert "## claude-code / anthropic/m / default" in md
+
+
 def test_standalone_grades_are_comparable(
     tmp_path: Path, make_submission: Callable[..., Path], rubrics_path: Path
 ) -> None:
@@ -116,6 +149,7 @@ def test_standalone_grades_are_comparable(
     report = build_report([root])
     (agent,) = report.agents
     assert (agent.agent, agent.model) == ("standalone", "external-lab")
+    assert agent.effort is None and leaderboard(report)[0]["effort"] == "default"
     assert agent.mean_score == 1.0
 
 

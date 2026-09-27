@@ -54,13 +54,23 @@ def report(
         typer.echo(render_markdown(summary))
         return
     table = Table(title=f"TrialDesignBench ({len(summary.task_ids)} tasks)")
-    for col in ("Rank", "Agent", "Model", "Mean", "Pass rate", "Attempted", "Errored"):
+    for col in (
+        "Rank",
+        "Agent",
+        "Model",
+        "Effort",
+        "Mean",
+        "Pass rate",
+        "Attempted",
+        "Errored",
+    ):
         table.add_column(col)
     for r in leaderboard(summary):
         table.add_row(
             str(r["rank"]),
             r["agent"],
             r["model"],
+            r["effort"],
             f"{r['mean_score']:.4f}",
             f"{r['pass_rate']:.4f}",
             f"{r['tasks_attempted']}/{r['tasks_total']}",
