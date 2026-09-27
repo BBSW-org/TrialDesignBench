@@ -37,6 +37,53 @@ def test_profile_is_consistent(profile: agents.AgentProfile) -> None:
     assert f"{profile.image_label.removeprefix('org.trialdesignbench.')}=" in (
         environment.dockerfile_text()
     )
+    effort = profile.effort
+    assert effort.levels and set(effort.levels) <= set(agents.EFFORT_LEVELS)
+    # Ordered lowest to highest, like the canonical list.
+    assert effort.levels == tuple(
+        lv for lv in agents.EFFORT_LEVELS if lv in effort.levels
+    )
+    assert agents.DEFAULT_EFFORT not in effort.levels
+    # The closed-book kwargs never set the effort; --effort owns that kwarg.
+    assert effort.kwarg not in profile.kwargs
+    assert effort.how and effort.note
+
+
+@PROFILES
+def test_effort_kwargs(profile: agents.AgentProfile) -> None:
+    assert agents.effort_kwargs(profile, None) == {}
+    assert agents.effort_kwargs(profile, agents.DEFAULT_EFFORT) == {}
+    for level in profile.effort.levels:
+        kwargs = agents.effort_kwargs(profile, level)
+        assert kwargs == {profile.effort.kwarg: level}
+        assert agents.effort_from_kwargs(profile.name, kwargs) == level
+    with pytest.raises(agents.AgentError, match="does not accept --effort 'bogus'"):
+        agents.effort_kwargs(profile, "bogus")
+    assert agents.effort_from_kwargs(profile.name, {"version": "1"}) is None
+    assert agents.effort_from_kwargs("aider", {"reasoning_effort": "high"}) is None
+
+
+def test_effort_levels_match_harbor_and_the_clis() -> None:
+    """Levels verified against Harbor 0.23.0 schemas and the pinned CLIs.
+
+    `claude --effort` (2.1.283) lists low..max and drops anything else with
+    a warning; the OpenAI API enumerates none..max for `reasoning.effort`;
+    grok 1.0.40 documents none..max as canonical levels; OpenCode variants
+    are the catalog's `reasoning_options` effort values.
+    """
+    levels = {a.name: a.effort.levels for a in agents.AGENTS}
+    assert levels["claude-code"] == ("low", "medium", "high", "xhigh", "max")
+    assert levels["codex"] == levels["grok-build"] == agents.EFFORT_LEVELS
+    assert levels["opencode"] == agents.EFFORT_LEVELS
+    kwargs = {a.name: a.effort.kwarg for a in agents.AGENTS}
+    assert kwargs == {
+        "claude-code": "reasoning_effort",
+        "codex": "reasoning_effort",
+        "grok-build": "reasoning_effort",
+        "opencode": "variant",
+    }
+    with pytest.raises(agents.AgentError, match="low, medium, high, xhigh, max"):
+        agents.effort_kwargs(agents.get_profile("claude-code"), "minimal")
 
 
 @PROFILES

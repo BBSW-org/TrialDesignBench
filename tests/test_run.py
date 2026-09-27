@@ -190,6 +190,68 @@ def test_opencode_providers(
         )
 
 
+@pytest.mark.parametrize("profile", agents.AGENTS, ids=lambda a: a.name)
+def test_effort_sets_the_agent_kwarg(
+    tasks_dir: Path, tmp_path: Path, profile: agents.AgentProfile
+) -> None:
+    model = f"{profile.providers[0]}/x"
+    level = profile.effort.levels[-1]
+    p = plan(tasks_dir, tmp_path, [AgentRequest(profile.name, model, effort=level)])
+    agent = load_job(p)["agents"][0]
+    assert agent["kwargs"][profile.effort.kwarg] == level
+    for key, value in profile.kwargs.items():  # closed-book kwargs intact
+        assert agent["kwargs"][key] == value
+    spec = p.manifest.agents[0]
+    assert spec.effort == level and spec.kwargs[profile.effort.kwarg] == level
+    assert not any("reasoning effort" in w for w in p.warnings)
+
+    # `default` (or no --effort) adds no kwarg, records None, and warns that
+    # the harness default is not pinned.
+    p = plan(
+        tasks_dir,
+        tmp_path,
+        [AgentRequest(profile.name, model, effort=agents.DEFAULT_EFFORT)],
+    )
+    assert profile.effort.kwarg not in load_job(p)["agents"][0]["kwargs"]
+    assert p.manifest.agents[0].effort is None
+    assert any("reasoning effort" in w and "--effort" in w for w in p.warnings)
+
+    # Claude Code and OpenCode silently ignore unknown levels: refuse first.
+    with pytest.raises(RunError, match="does not accept --effort 'bogus'"):
+        plan(tasks_dir, tmp_path, [AgentRequest(profile.name, model, effort="bogus")])
+
+
+def test_effort_pairing() -> None:
+    agents_ = ["claude-code", "codex"]
+    models = ["anthropic/a", "openai/b"]
+    assert [r.effort for r in parse_agent_pairs(agents_, models)] == [None, None]
+    # Once for every agent, or once per agent (`default` as the placeholder).
+    reqs = parse_agent_pairs(agents_, models, efforts=["high"])
+    assert [r.effort for r in reqs] == ["high", "high"]
+    reqs = parse_agent_pairs(agents_, models, efforts=["max", "default"])
+    assert [r.effort for r in reqs] == ["max", "default"]
+    with pytest.raises(RunError, match="--effort must be given once"):
+        parse_agent_pairs(["a", "b", "c"], ["x/a", "x/b", "x/c"], efforts=["hi", "lo"])
+
+
+def test_effort_matrix_on_one_agent(tasks_dir: Path, tmp_path: Path) -> None:
+    """The same agent and model at several levels is a valid matrix."""
+    requests = parse_agent_pairs(
+        ["codex", "codex", "codex"],
+        ["openai/gpt-5.5"] * 3,
+        efforts=["medium", "xhigh", "default"],
+    )
+    p = plan(tasks_dir, tmp_path, requests)
+    job = load_job(p)
+    assert [a["kwargs"].get("reasoning_effort") for a in job["agents"]] == [
+        "medium",
+        "xhigh",
+        None,
+    ]
+    assert [s.effort for s in p.manifest.agents] == ["medium", "xhigh", None]
+    assert not any("union" in w for w in p.warnings)  # same hosts throughout
+
+
 def test_matrix_uses_host_union_with_warning(tasks_dir: Path, tmp_path: Path) -> None:
     requests = parse_agent_pairs(["claude-code", "codex"], ["anthropic/a", "openai/b"])
     p = plan(tasks_dir, tmp_path, requests)
@@ -396,16 +458,26 @@ def test_job_yaml_parses_with_harbor_jobconfig(tasks_dir: Path, tmp_path: Path) 
     assert config.agents[0].kwargs["disallowed_tools"] == "WebSearch,WebFetch"
 
 
-@pytest.mark.parametrize("profile", agents.AGENTS, ids=lambda a: a.name)
+@pytest.mark.parametrize(
+    ("profile", "level"),
+    [(a, lv) for a in agents.AGENTS for lv in (None, *a.effort.levels)],
+    ids=lambda x: x if isinstance(x, str) else getattr(x, "name", "default"),
+)
 def test_agent_kwargs_pass_harbor_preflight(
-    tasks_dir: Path, tmp_path: Path, profile: agents.AgentProfile
+    tasks_dir: Path, tmp_path: Path, profile: agents.AgentProfile, level: str | None
 ) -> None:
-    """Harbor rejects unknown or invalid kwargs before any trial starts."""
+    """Harbor rejects unknown or invalid kwargs before any trial starts.
+
+    Run with every effort level so `Effort.levels` never drifts from the
+    Literal in Harbor's agent options.
+    """
     harbor_config = pytest.importorskip(
         "harbor.models.job.config", reason="harbor not installed"
     )
     factory = pytest.importorskip("harbor.agents.factory")
     model = f"{profile.providers[0]}/x"
-    p = plan(tasks_dir, tmp_path, [AgentRequest(profile.name, model)])
+    p = plan(tasks_dir, tmp_path, [AgentRequest(profile.name, model, effort=level)])
     config = harbor_config.JobConfig.model_validate(load_job(p))
     factory.AgentFactory.run_preflight(config.agents[0])
+    if level is not None:
+        assert config.agents[0].kwargs[profile.effort.kwarg] == level

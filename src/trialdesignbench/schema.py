@@ -304,6 +304,12 @@ class AgentSpec(_Model):
     agent: str
     model: str
     agent_version: str | None
+    effort: str | None = Field(
+        default=None,
+        description="Reasoning effort level requested with `--effort`, also "
+        "present in `kwargs`. None leaves the harness default, which depends "
+        "on the model and the CLI version and is not recorded.",
+    )
     kwargs: dict[str, Any] = Field(default_factory=dict)
     env_keys: tuple[str, ...] = Field(
         default=(), description="Names (never values) of agent env vars set."
@@ -371,6 +377,11 @@ class TrialSummary(_Model):
     task_id: str
     agent: str
     model: str
+    effort: str | None = Field(
+        default=None,
+        description="Reasoning effort level set for the trial; None for the "
+        "harness default.",
+    )
     status: Literal["graded", "zeroed", "error", "missing"]
     score: float
     rubric_score: float | None
@@ -396,6 +407,7 @@ class AgentAggregate(_Model):
     schema_version: str = SCHEMA_VERSION
     agent: str
     model: str
+    effort: str | None = None
     mean_score: float
     pass_rate: float
     n_tasks_total: int

@@ -144,3 +144,38 @@ def test_run_dry_run(tmp_path: Path, dataset_dir: Path, monkeypatch) -> None:  #
     )
     assert r.exit_code == 1
     assert "ANTHROPIC_API_KEY" in r.output
+
+
+def test_run_effort_option(tmp_path: Path, dataset_dir: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    tasks = tmp_path / "tasks"
+    assert (
+        runner.invoke(app, ["build", str(dataset_dir), "-o", str(tasks)]).exit_code == 0
+    )
+    common = ["run", "--tasks", str(tasks), "--dry-run", "--jobs-dir"]
+    common += [str(tmp_path / "jobs")]
+    matrix = ["--agent", "claude-code", "--model", "anthropic/claude-opus-5"]
+    matrix += ["--agent", "codex", "--model", "openai/gpt-5.5"]
+    r = runner.invoke(
+        app,
+        [*common, "--job-name", "e1", *matrix, "--effort", "max", "--effort", "xhigh"],
+    )
+    assert r.exit_code == 0, r.output
+    job = json.loads(
+        "\n".join(
+            line
+            for line in (tmp_path / "jobs" / "e1" / "job.yaml").read_text().splitlines()
+            if not line.startswith("#")
+        )
+    )
+    assert [a["kwargs"]["reasoning_effort"] for a in job["agents"]] == ["max", "xhigh"]
+    assert "reasoning effort" not in r.output
+
+    r = runner.invoke(app, [*common, "--job-name", "e2", *matrix])
+    assert r.exit_code == 0, r.output
+    assert "reasoning effort for claude-code not set" in r.output
+
+    r = runner.invoke(app, [*common, "--job-name", "e3", *matrix, "--effort", "none"])
+    assert r.exit_code == 1
+    assert "claude-code does not accept --effort 'none'" in r.output

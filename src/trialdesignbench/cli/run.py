@@ -9,7 +9,7 @@ from typing import Annotated
 import typer
 from rich.markup import escape
 
-from trialdesignbench.agents import AGENTS, AuthMode
+from trialdesignbench.agents import AGENTS, DEFAULT_EFFORT, EFFORT_LEVELS, AuthMode
 from trialdesignbench.cli._console import console, fail, warn
 from trialdesignbench.run import (
     RunError,
@@ -21,6 +21,7 @@ from trialdesignbench.run import (
 
 _AGENT_NAMES = ", ".join(a.name for a in AGENTS)
 _SUBSCRIPTION_AGENTS = ", ".join(a.name for a in AGENTS if a.subscription)
+_EFFORT_LEVELS = ", ".join((*EFFORT_LEVELS, DEFAULT_EFFORT))
 
 
 def run(
@@ -39,6 +40,15 @@ def run(
             "--model", help="provider/model, e.g. anthropic/<id> (one per --agent)."
         ),
     ],
+    effort: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--effort",
+            help=f"Reasoning effort ({_EFFORT_LEVELS}), once for all agents or "
+            "once per --agent. Each agent accepts a subset; `default` keeps the "
+            "harness default.",
+        ),
+    ] = None,
     agent_version: Annotated[
         list[str] | None,
         typer.Option("--agent-version", help="Must match the pinned agent version."),
@@ -83,7 +93,7 @@ def run(
         fail("--auth must be api or subscription")
     mode: AuthMode = auth  # type: ignore[assignment]
     try:
-        requests = parse_agent_pairs(agent, model, agent_version or [])
+        requests = parse_agent_pairs(agent, model, agent_version or [], effort or [])
         plan = plan_run(
             tasks,
             requests,
