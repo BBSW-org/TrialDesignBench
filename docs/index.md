@@ -33,7 +33,9 @@ Harbor writes.
 
 Supported agents are `claude-code` (Claude Code), `codex` (Codex CLI),
 `grok-build` (Grok Build), and `opencode` (OpenCode). Other Harbor agents
-are refused because they cannot run closed book.
+are refused because they cannot run closed book. Reasoning effort is a
+first-class run setting next to the agent and model (`--effort`): checked
+per agent before launch, recorded with every job, and kept apart in reports.
 
 - **Hidden rubrics.** Agents see the prompt template, the question skeleton,
   and the source document. Rubrics live only in each task's `tests/`
@@ -84,7 +86,7 @@ uv run tdb build tmp/dataset --out tmp/tasks
 # ANTHROPIC_API_KEY.
 export ANTHROPIC_API_KEY=...
 uv run tdb run --tasks tmp/tasks --agent claude-code \
-  --model anthropic/claude-opus-5 --n-attempts 3 --canary
+  --model anthropic/claude-opus-5 --effort high --n-attempts 3 --canary
 uv run tdb report jobs/<job-name> --format md
 
 # Grade any directory with output.json and output.R, no Harbor needed

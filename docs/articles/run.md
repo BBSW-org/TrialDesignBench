@@ -7,12 +7,13 @@
 uv add "trialdesignbench[harbor]"   # Python 3.12+
 export ANTHROPIC_API_KEY=...        # agent (anthropic/ models) and judge
 uv run tdb run --tasks tmp/tasks \
-  --agent claude-code --model anthropic/claude-opus-5 \
+  --agent claude-code --model anthropic/claude-opus-5 --effort high \
   --n-attempts 3 --n-concurrent 2 --canary
 ```
 
-Which agents can run, the credentials each needs, and the closed-book
-settings `tdb run` applies are described in [Agents](agents.md). The rubric
+Which agents can run, the credentials each needs, the reasoning effort
+levels each accepts, and the closed-book settings `tdb run` applies are
+described in [Agents](agents.md). The rubric
 judge in the verifier always needs `ANTHROPIC_API_KEY`; see
 [Judge](judge.md).
 
@@ -21,6 +22,7 @@ judge in the verifier always needs `ANTHROPIC_API_KEY`; see
 | Option | Meaning |
 | --- | --- |
 | `--agent`, `--model` | Harbor agent and `provider/model`. Repeat the pair to run a matrix in one job. |
+| `--effort` | Reasoning effort level (`none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, or `default`), once for all agents or once per `--agent`. Each agent accepts a subset, and each model a subset of that; see [Agents](agents.md#reasoning-effort). Unset, the harness default applies and `tdb run` warns. |
 | `--agent-version` | Must equal the pinned version (default). |
 | `--n-attempts` | Attempts per task (default 1). |
 | `--n-concurrent` | Concurrent trials (default 2 for `api`, 1 for `subscription`). |
@@ -33,8 +35,9 @@ judge in the verifier always needs `ANTHROPIC_API_KEY`; see
 | `--dry-run` | Write `job.yaml` and `tdb-run.json`, print the command, and stop. |
 
 `tdb run` fails before launching when an agent is not supported, the model's
-provider does not match the agent, a required credential is missing, or the
-local image was built for other agent pins or another grader version.
+provider does not match the agent, an effort level is not one the agent
+accepts, a required credential is missing, or the local image was built for
+other agent pins or another grader version.
 
 ## Files
 
@@ -77,6 +80,11 @@ task definition to every agent, so when agents need different hosts every
 trial gets the union (for example `api.anthropic.com` and `api.openai.com`,
 plus any setup hosts). `tdb run` warns when this happens; run one job per
 agent if you need strict per-agent allowlists.
+
+A matrix may repeat the same agent and model at different `--effort` levels.
+Harbor names each trial by task plus a random suffix, every trial's
+`result.json` records its own agent kwargs, and `tdb report` keeps the
+levels apart.
 
 ## Regrade
 

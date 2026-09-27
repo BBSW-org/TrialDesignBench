@@ -16,11 +16,14 @@ uv run tdb report jobs/<job> [more dirs...] [--out report.json] [--format table|
 
 ## Aggregation
 
-Trials are grouped by agent × model × task.
+Trials are grouped by agent × model × effort × task. The effort level is
+read from each trial's recorded agent kwargs (`reasoning_effort`, or
+`variant` for `opencode`); trials that ran at the harness default, and all
+standalone directories, are labelled `default`.
 
 - Per task: mean, min, and max score over attempts, and "all attempts pass"
   (every attempt scores at least `--threshold`, a pass^k style metric).
-- Per agent × model: `mean_score` is the mean over **all expected tasks**;
+- Per agent × model × effort: `mean_score` is the mean over **all expected tasks**;
   tasks never attempted count as 0 and are listed as missing. Trials that
   errored (agent crash, no verifier output, grade status `error`) score 0 and
   are listed.

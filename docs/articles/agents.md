@@ -41,6 +41,70 @@ uv run tdb run --tasks tmp/tasks \
   --agent grok-build --model xai/grok-4.7
 ```
 
+## Reasoning effort
+
+Reasoning effort changes a model's capability as much as the model choice
+does, so `tdb run` treats it as a first-class setting next to `--agent` and
+`--model`. `--effort <level>` is checked before launch, becomes the
+agent-specific Harbor kwarg below, and is recorded in `tdb-run.json`
+(`agents[].effort`, and in `agents[].kwargs`) and in each trial's
+`result.json`. `tdb report` groups results by agent × model × effort, so the
+same model at two levels never shares a leaderboard row.
+
+| Agent | Harbor kwarg | Levels (lowest to highest) | Becomes |
+| --- | --- | --- | --- |
+| `claude-code` | `reasoning_effort` | `low`, `medium`, `high`, `xhigh`, `max` | `claude --effort <level>` |
+| `codex` | `reasoning_effort` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` | `codex -c model_reasoning_effort=<level>` |
+| `grok-build` | `reasoning_effort` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` | `grok --reasoning-effort <level>` |
+| `opencode` | `variant` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` | `opencode --variant <level>` |
+
+The levels are those Harbor 0.23.0 accepts for the kwarg (`harbor agent
+schema <name>`), confirmed against the pinned CLIs. Each model supports a
+subset, which the provider documents and which changes with new models;
+`tdb run` cannot check that on the host. What happens with a level the model
+lacks differs by agent:
+
+- `claude-code`: the CLI runs the highest supported level at or below the
+  requested one (for example `xhigh` runs as `high` on Opus 4.6). A value the
+  CLI does not know is dropped with a warning and the default applies, which
+  is why `tdb run` refuses `none` and `minimal` here.
+- `codex`: the level is sent to the OpenAI API as `reasoning.effort`, which
+  enumerates exactly these seven values. A level the model does not support
+  fails the request, so the trial errors (scored 0 and listed by `tdb report`).
+- `grok-build`: a model accepts only the levels its menu advertises
+  (`grok-4.7`: `low`, `medium`, `high`, `xhigh`); reasoning cannot be turned
+  off on `grok-4.x`.
+- `opencode`: variant names are the model's `reasoning_options` effort values
+  in the catalog the image ships at `/opt/tdb/opencode-models.json` (for
+  example `claude-opus-5`: `low` to `max`; `gpt-5.5`: `none`, `low`,
+  `medium`, `high`, `xhigh`; `grok-4.7`: `low` to `xhigh`). OpenCode silently
+  ignores a variant the model does not define, so check the catalog before a
+  large run.
+
+Without `--effort` (or with `--effort default`) no kwarg is set and each
+harness applies its own default: Claude Code the model's default (`high` for
+most models, `medium` for Opus 5.5), Codex `medium`, Grok Build the model's
+default (`high` on `grok-4.x`), and OpenCode sends no effort, so the provider
+default applies. These defaults depend on the model and change between CLI
+versions, so `tdb run` warns when an agent runs without an explicit level,
+and `tdb report` labels such runs `default`.
+
+`--effort` is given once for every agent, or once per `--agent`; `default`
+is the placeholder for an agent that keeps the harness default. The same
+agent and model may appear at several levels in one job:
+
+```bash
+uv run tdb run --tasks tmp/tasks --agent codex --model openai/gpt-5.5 --effort xhigh
+uv run tdb run --tasks tmp/tasks \
+  --agent claude-code --model anthropic/claude-opus-5 --effort medium \
+  --agent claude-code --model anthropic/claude-opus-5 --effort max \
+  --agent grok-build --model xai/grok-4.7 --effort default
+```
+
+Levels are not comparable across agents or providers: `high` is Claude
+Code's default but two steps above Codex's. Compare levels within one agent
+and model, and report the level with every result.
+
 ## Authentication
 
 Agent credentials and the [judge](judge.md) credential are separate
@@ -181,10 +245,12 @@ Everything lives in `src/trialdesignbench/agents.py`:
 2. Add a pin to `ImagePins` and a matching `ARG` and label to the Dockerfile
    (a test enforces this), plus any closed-book settings the image must carry.
 3. Add an `AgentProfile` to `AGENTS`: providers, pin, `preinstalled` or
-   `setup_hosts`, closed-book `kwargs` and `env`, `disabled_tools`, and an
+   `setup_hosts`, an `Effort` (the Harbor kwarg that carries the reasoning
+   effort and the levels it accepts, from `harbor agent schema <name>` and
+   the CLI's help), closed-book `kwargs` and `env`, `disabled_tools`, and an
    optional `Subscription`. Add a new provider to `PROVIDERS` if needed.
-4. Add the agent to the tables on this page (a test checks the supported and
-   refused lists), and make sure the grader's `WEB_TOOL_NAMES` covers its
-   disabled tools (also tested).
+4. Add the agent to the tables on this page (a test checks the supported,
+   reasoning effort, and refused lists), and make sure the grader's
+   `WEB_TOOL_NAMES` covers its disabled tools (also tested).
 5. Run `tdb env check --canary --agent <name>` and a smoke run, then set
    `verified=True`.

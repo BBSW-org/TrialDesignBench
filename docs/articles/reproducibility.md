@@ -8,7 +8,7 @@ Every artifact records what produced it.
 | `task.json` | source submission id, reviewer, `submittedAt`, intake file sha256, selection rule, document sha256 |
 | `tdb-build.json` | dataset digest, package version, prompt template sha256, image ref, image pins, grader source, time |
 | `task.toml` `[metadata]` | dataset version and digest, task digest, template sha256, verifier base image |
-| `tdb-run.json` | package and Harbor versions, dataset and tasks digests, image ref and digest, agents, models, agent versions, auth mode, skills, judge model, effective network policy (agent-phase and setup allowlists, per-agent setup hosts, disabled tools, canary), git SHA of this repository, command, timestamps, exit code |
+| `tdb-run.json` | package and Harbor versions, dataset and tasks digests, image ref and digest, agents, models, agent versions, reasoning effort levels (or the harness default), auth mode, skills, judge model, effective network policy (agent-phase and setup allowlists, per-agent setup hosts, disabled tools, canary), git SHA of this repository, command, timestamps, exit code |
 | `grade.json` | scoring version, package version, judge model, judge prompt sha256, SDK version, votes, rubrics sha256, submission file hashes |
 | `report.json` | package and scoring versions, threshold, sources |
 

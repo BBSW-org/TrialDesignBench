@@ -134,6 +134,16 @@ def test_docs_list_every_agent() -> None:
         assert profile.version in row.group(0)
     for name in agents.REFUSED_AGENTS:
         assert f"`{name}`" in text
+    # The reasoning effort table lists each agent's kwarg and every level.
+    for profile in agents.AGENTS:
+        row = re.search(
+            rf"^\| `{re.escape(profile.name)}` \| `{profile.effort.kwarg}` \|.*$",
+            text,
+            re.MULTILINE,
+        )
+        assert row, f"{profile.name} missing from the reasoning effort table"
+        for level in profile.effort.levels:
+            assert f"`{level}`" in row.group(0), (profile.name, level)
     readme = (ROOT / "README.md").read_text()
     for profile in agents.AGENTS:
         assert f"`{profile.name}`" in readme
