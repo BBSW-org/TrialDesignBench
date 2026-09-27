@@ -22,7 +22,7 @@ LABEL_PREFIX = "org.trialdesignbench"
 @dataclass(frozen=True)
 class ImagePins:
     r_version: str = "4.6.1"
-    cran_snapshot: str = "2026-09-25"
+    cran_snapshot: str = "2026-09-27"
     ubuntu_codename: str = "noble"
     node_version: str = "24.21.0"
     uv_version: str = "0.12.19"

@@ -7,7 +7,7 @@ One shared, pinned Docker image serves both the agent and the verifier.
 | Component | Pin |
 | --- | --- |
 | Base | `rocker/r-ver:4.6.1` (multi-arch: amd64, arm64) |
-| CRAN packages | Posit Package Manager snapshot `2026-09-25` |
+| CRAN packages | Posit Package Manager snapshot `2026-09-27` |
 | R packages | gsDesign, gsDesign2, rpact, lrstat, graphicalMCP, eventPred, survival, mvtnorm, jsonlite, dplyr, ggplot2, digest |
 | Python | 3.12 (Ubuntu noble) with `uv` 0.12.19 |
 | Node | 24.21.0 LTS |
