@@ -122,7 +122,9 @@ recorded in `tdb-run.json` (`agents[].kwargs`, `env_keys`, and
 No MCP servers are ever added. Provider-side web tools never touch the
 container network, which is why disabling them in the harness matters; the
 grader additionally scans each trajectory for web tool calls (see
-[Grade](grade.md)).
+[Grade](grade.md)). Which of each agent's tools run provider-side, and the
+probe runs that established it, are documented in
+[Closed book](closed-book.md#where-each-agents-web-tools-run).
 
 ## Network
 
@@ -163,6 +165,9 @@ reason below. Any other Harbor agent is refused as unsupported.
 | `kimi-code` | Harbor records no ATIF trajectory for it, so the grader cannot verify closed book and every trial would score 0. |
 | `muse-code` | No ATIF trajectory (every trial would score 0), no documented way to disable its web tools, and Harbor cannot pin its version. |
 
+The evidence behind these reasons and what would have to change to accept
+one of these agents are in [Closed book](closed-book.md#relaxing-the-policy).
+
 ## Adding or updating an agent
 
 Everything lives in `src/trialdesignbench/agents.py`:
@@ -170,7 +175,9 @@ Everything lives in `src/trialdesignbench/agents.py`:
 1. Read the agent's Harbor adapter (`harbor agent schema <name>` lists its
    kwargs). Check how it installs (does it skip when the pinned version is
    present?), which credentials it reads, which web tools it exposes and how
-   to disable them, and that it writes an ATIF trajectory.
+   to disable them, and that it writes an ATIF trajectory. Run the
+   [probe](closed-book.md#probing-an-agent) to learn which of its web tools
+   run on the provider's servers; those are the ones that need a switch.
 2. Add a pin to `ImagePins` and a matching `ARG` and label to the Dockerfile
    (a test enforces this), plus any closed-book settings the image must carry.
 3. Add an `AgentProfile` to `AGENTS`: providers, pin, `preinstalled` or

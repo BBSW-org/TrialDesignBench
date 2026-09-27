@@ -18,6 +18,7 @@ nav = [
         "articles/environment.md",
         "articles/build.md",
         "articles/agents.md",
+        "articles/closed-book.md",
         "articles/run.md",
         "articles/grade.md",
         "articles/judge.md",
