@@ -21,11 +21,11 @@ LABEL_PREFIX = "org.trialdesignbench"
 
 @dataclass(frozen=True)
 class ImagePins:
-    r_version: str = "4.5.2"
+    r_version: str = "4.6.1"
     cran_snapshot: str = "2026-09-25"
     ubuntu_codename: str = "noble"
-    node_version: str = "24.20.0"
-    uv_version: str = "0.12.17"
+    node_version: str = "24.21.0"
+    uv_version: str = "0.12.19"
     # Agent CLIs (Harbor agent versions).
     claude_code_version: str = "2.1.283"
     codex_version: str = "0.157.1"
