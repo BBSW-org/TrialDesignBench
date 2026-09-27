@@ -26,6 +26,8 @@
 
 ### Improvements
 
+- Bump the pinned Claude Code to 2.1.283 (was 2.1.277) and Codex CLI to
+  0.157.1 (was 0.155.1), so their latest supported models can run.
 - `--model` must be `<provider>/<model>` with a provider the agent supports,
   so the allowlisted API host always matches the model.
 - The environment image adds a root-owned `/etc/grok/requirements.toml`

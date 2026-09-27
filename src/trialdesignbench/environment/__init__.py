@@ -27,8 +27,8 @@ class ImagePins:
     node_version: str = "24.20.0"
     uv_version: str = "0.12.17"
     # Agent CLIs (Harbor agent versions).
-    claude_code_version: str = "2.1.277"
-    codex_version: str = "0.155.1"
+    claude_code_version: str = "2.1.283"
+    codex_version: str = "0.157.1"
     grok_build_version: str = "1.0.40"
     opencode_version: str = "1.18.32"
     pharma_skills_repo: str = "https://github.com/RConsortium/pharma-skills.git"

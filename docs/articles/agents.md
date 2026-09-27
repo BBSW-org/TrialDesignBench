@@ -15,8 +15,8 @@ refuses any other agent.
 
 | Agent | Harness | Pinned version | Installed | `--model` providers | `--auth` |
 | --- | --- | --- | --- | --- | --- |
-| `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.277 | in the image | `anthropic` | `api`, `subscription` |
-| `codex` | [Codex CLI](https://developers.openai.com/codex) | 0.155.1 | in the image | `openai` | `api`, `subscription` |
+| `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.283 | in the image | `anthropic` | `api`, `subscription` |
+| `codex` | [Codex CLI](https://developers.openai.com/codex) | 0.157.1 | in the image | `openai` | `api`, `subscription` |
 | `grok-build` | [Grok Build](https://docs.x.ai/build/overview) | 1.0.40 | by Harbor at setup | `xai` | `api` |
 | `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.18.32 | by Harbor at setup | `anthropic`, `openai`, `xai` | `api` |
 
