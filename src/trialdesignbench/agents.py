@@ -23,6 +23,7 @@ run before marking them verified.
 
 from __future__ import annotations
 
+import json
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -52,6 +53,7 @@ class Provider:
 PROVIDERS: Mapping[str, Provider] = {
     "anthropic": Provider("ANTHROPIC_API_KEY", "api.anthropic.com"),
     "openai": Provider("OPENAI_API_KEY", "api.openai.com"),
+    "xai": Provider("XAI_API_KEY", "api.x.ai"),
 }
 
 
@@ -106,6 +108,17 @@ class AgentProfile:
 
 
 _CLAUDE_CODE_DENIED = ["WebSearch", "WebFetch"]
+_OPENCODE_DENIED = {"webfetch": "deny", "websearch": "deny"}
+# Hosts for Harbor's nvm + npm install of Node-based CLIs (nvm clones
+# github.com when git is present).
+_NVM_NPM_HOSTS = (
+    "raw.githubusercontent.com",
+    "github.com",
+    "nodejs.org",
+    "registry.npmjs.org",
+)
+# Ubuntu apt mirrors of the image (ports.ubuntu.com serves arm64).
+_APT_HOSTS = ("archive.ubuntu.com", "security.ubuntu.com", "ports.ubuntu.com")
 
 AGENTS: tuple[AgentProfile, ...] = (
     AgentProfile(
@@ -153,6 +166,54 @@ AGENTS: tuple[AgentProfile, ...] = (
             "by smoke test",
         ),
         verified=True,
+    ),
+    AgentProfile(
+        name="grok-build",
+        title="Grok Build",
+        providers=("xai",),
+        version_pin="grok_build_version",
+        preinstalled=False,
+        # Harbor's install runs `apt-get install ca-certificates` and x.ai's
+        # installer on every setup.
+        setup_hosts=(*_APT_HOSTS, "x.ai"),
+        # The image also pins these in /etc/grok/requirements.toml.
+        kwargs={
+            "disable_web_search": True,
+            "grok_config": {"features": {"web_fetch": False}},
+        },
+        disabled_tools=("web_search", "web_fetch"),
+        note="setup hosts and both phases pass the canary and a Harbor "
+        "install-only run; confirm the agent phase with a smoke run",
+    ),
+    AgentProfile(
+        name="opencode",
+        title="OpenCode",
+        providers=("anthropic", "openai", "xai"),
+        version_pin="opencode_version",
+        preinstalled=False,
+        # Harbor's install runs nvm and `npm i -g opencode-ai` on every setup.
+        setup_hosts=_NVM_NPM_HOSTS,
+        kwargs={
+            "opencode_config": {
+                "autoupdate": False,
+                "share": "disabled",
+                "lsp": False,
+                "formatter": False,
+                "snapshot": False,
+                "permission": dict(_OPENCODE_DENIED),
+            },
+        },
+        env={
+            "OPENCODE_PERMISSION": json.dumps(_OPENCODE_DENIED),
+            "OPENCODE_DISABLE_MODELS_FETCH": "1",
+            "OPENCODE_MODELS_PATH": environment.OPENCODE_MODELS_PATH,
+            "OPENCODE_DISABLE_AUTOUPDATE": "1",
+            "OPENCODE_DISABLE_LSP_DOWNLOAD": "1",
+            "OPENCODE_DISABLE_CLAUDE_CODE": "1",
+        },
+        disabled_tools=tuple(_OPENCODE_DENIED),
+        note="setup hosts and both phases pass the canary and a Harbor "
+        "install-only run; confirm the agent phase with a smoke run",
     ),
 )
 

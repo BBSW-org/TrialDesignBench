@@ -18,6 +18,7 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
+ROOT = Path(__file__).resolve().parents[1]
 PROFILES = pytest.mark.parametrize("profile", agents.AGENTS, ids=lambda a: a.name)
 
 
@@ -51,6 +52,16 @@ def test_registry_names() -> None:
     assert not set(names) & set(agents.REFUSED_AGENTS)
     with pytest.raises(agents.AgentError, match="Supported agents"):
         agents.get_profile("gemini-cli")
+
+
+def test_grok_policy_file_matches_profile() -> None:
+    policy = tomllib.loads(
+        (ROOT / "src/trialdesignbench/environment/grok-requirements.toml").read_text()
+    )
+    kwargs = agents.get_profile("grok-build").kwargs
+    assert policy["disable_web_search"] is kwargs["disable_web_search"] is True
+    assert policy["features"]["web_fetch"] is False
+    assert kwargs["grok_config"]["features"]["web_fetch"] is False
 
 
 def test_codex_subscription_file(

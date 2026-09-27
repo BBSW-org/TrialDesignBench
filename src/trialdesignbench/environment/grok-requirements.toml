@@ -1,0 +1,16 @@
+# Installed as /etc/grok/requirements.toml: grok's highest-priority,
+# root-owned config layer. User config.toml, environment variables, and
+# remote settings cannot override these pins, so grok-build stays closed
+# book even if Harbor's generated config changes. See
+# https://docs.x.ai/build/enterprise#configuration
+
+# Server-side web search (runs on xAI's servers, bypassing egress rules).
+disable_web_search = true
+
+[features]
+# Client-side URL fetching (off by default; pinned off).
+web_fetch = false
+telemetry = false
+
+[harness]
+disable_codebase_upload = true
