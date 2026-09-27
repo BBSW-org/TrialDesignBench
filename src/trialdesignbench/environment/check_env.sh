@@ -4,16 +4,21 @@
 set -uo pipefail
 
 status=0
-report() { printf '%-22s %s\n' "$1" "$2"; }
+# Values come from command substitutions (subshells), so a missing component
+# is signalled by the value MISSING rather than by setting `status` there.
+report() {
+    printf '%-22s %s\n' "$1" "$2"
+    case "$2" in *MISSING*) status=1 ;; esac
+}
 
-report "tdb" "$(tdb --version 2>&1 || { status=1; echo MISSING; })"
-report "python" "$(python3 --version 2>&1 || { status=1; echo MISSING; })"
-report "uv" "$(uv --version 2>&1 || { status=1; echo MISSING; })"
-report "node" "$(node --version 2>&1 || { status=1; echo MISSING; })"
-report "claude" "$(claude --version 2>&1 || { status=1; echo MISSING; })"
-report "codex" "$(codex --version 2>&1 || { status=1; echo MISSING; })"
-report "skills" "$(ls /skills 2>/dev/null | tr '\n' ' ' || { status=1; echo MISSING; })"
-report "skills commit" "$(cat /skills/.commit 2>/dev/null || { status=1; echo MISSING; })"
+report "tdb" "$(tdb --version 2>&1 || echo MISSING)"
+report "python" "$(python3 --version 2>&1 || echo MISSING)"
+report "uv" "$(uv --version 2>&1 || echo MISSING)"
+report "node" "$(node --version 2>&1 || echo MISSING)"
+report "claude" "$(claude --version 2>&1 || echo MISSING)"
+report "codex" "$(codex --version 2>&1 || echo MISSING)"
+report "skills" "$(ls /skills 2>/dev/null | tr '\n' ' ' || echo MISSING)"
+report "skills commit" "$(cat /skills/.commit 2>/dev/null || echo MISSING)"
 
 Rscript -e '
 pkgs <- trimws(readLines("/opt/tdb/r-packages.txt"))
