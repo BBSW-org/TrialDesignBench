@@ -1,0 +1,3 @@
+# Agents
+
+::: trialdesignbench.agents

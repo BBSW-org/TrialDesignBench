@@ -47,7 +47,8 @@ src/trialdesignbench/
   judge.py         Judge protocol, AnthropicJudge (lazy `anthropic` import), FakeJudge
   grade.py         deterministic checks + rubric judging + outputs (delicate)
   scoring.py       versioned scoring rules, pure functions
-  run.py           job.yaml, auth validation, network host table, harbor invocation
+  agents.py        supported agents: providers, credentials, hosts, closed-book settings
+  run.py           job.yaml, allowlists, auth validation, harbor invocation
   canary.py        network canary Harbor task
   report.py        job dirs / grade dirs -> ReportSummary + leaderboard
   provenance.py    digests, versions, git SHA, image digest
@@ -57,20 +58,37 @@ src/trialdesignbench/
 
 ## Implementation notes
 
-- `tdb build` writes the agent allowlist as `allowed_hosts = []` with the
-  marker `# tdb:agent-allowed-hosts`; `tdb run` fills it in task copies at
-  `<jobs_dir>/<job_name>.tasks/`. Never place files Harbor should keep inside
-  a job directory: Harbor deletes subdirectories without `result.json` on
-  resume.
+- Network policy has two phases per task: `[agent]` (during `agent.run()`,
+  model API hosts only) and the `[environment]` baseline (during agent setup,
+  plus install hosts for agents Harbor installs at setup). `tdb build` writes
+  both as `allowed_hosts = []` with the markers `# tdb:agent-allowed-hosts`
+  and `# tdb:environment-allowed-hosts`; `tdb run` fills them in task copies
+  at `<jobs_dir>/<job_name>.tasks/`. Never place files Harbor should keep
+  inside a job directory: Harbor deletes subdirectories without
+  `result.json` on resume.
+- `src/trialdesignbench/agents.py` is the only list of supported agents
+  (`AGENTS`) and refused ones (`REFUSED_AGENTS`), with their providers,
+  credentials, hosts, pins, and closed-book kwargs/env. Keep
+  `docs/articles/agents.md` and the README in sync (tests check this). An
+  agent is supported only if its web tools can be disabled, its egress can be
+  limited to the model API during `agent.run()`, and Harbor writes an ATIF
+  trajectory (the grader errors without one).
+- Harbor's adapters for some agents (grok-build, opencode) reinstall the CLI
+  at every setup regardless of the image, so preinstalling them does not
+  help; they get `setup_hosts` and the pin as Harbor's `version` kwarg.
+  Closed-book settings Harbor cannot overwrite (for example
+  `/etc/grok/requirements.toml`) belong in the image. Validate new kwargs
+  with `harbor agent schema <name>`; Harbor rejects unknown kwargs.
 - Separate verifiers do not get `tests/` uploaded, so `tests/Dockerfile` is
   `FROM` the shared image and copies `test.sh` and `rubrics.json` in.
 - Harbor reads `reward` from `reward.json` as the headline metric; all values
   must be finite numbers.
 - `tdb run` must never pass `--allow-agent-host` or `--allow-environment-host`,
-  add MCP servers, or allow an agent version different from the image.
+  add MCP servers, or allow an agent version different from the pin.
 - Changing scoring rules requires bumping `SCORING_VERSION`. Changing the judge
   prompt changes `judge_prompt_sha256()`, which is recorded in every grade.
-- Do not log `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or OAuth tokens; manifests
+- Do not log API keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `XAI_API_KEY`)
+  or OAuth tokens; manifests
   record variable names only.
 
 ## Development Environment

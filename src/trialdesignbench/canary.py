@@ -1,10 +1,18 @@
 """Network canary: a Harbor task that proves the egress policy is enforced.
 
-The probe runs as the environment healthcheck, inside the agent container
-after Harbor has applied the task's network policy. It records whether
-blocked hosts are unreachable and whether each allowed model API host
-connects. The verifier turns the probe result into reward 1 (policy holds)
-or 0. `tdb report` refuses to report a job whose canary did not score 1.
+The canary uses the same two-phase policy as benchmark tasks: an
+`[environment]` baseline for agent setup (model API hosts plus any install
+hosts) and an `[agent]` allowlist for `agent.run()` (model API hosts only).
+
+- The setup probe runs as the environment healthcheck, inside the agent
+  container after Harbor has applied the baseline. It records whether
+  blocked URLs are unreachable and whether each model API host connects.
+- With `agent_probe=True` (Harbor's `oracle` agent, `tdb env check
+  --canary`), `solution/solve.sh` repeats the probe during the agent phase
+  and also requires the install hosts to be blocked there.
+
+The verifier turns the probe results into reward 1 (policy holds) or 0.
+`tdb report` refuses to report a job whose canary did not score 1.
 """
 
 from __future__ import annotations
@@ -16,6 +24,7 @@ from pathlib import Path
 
 from trialdesignbench.build import (
     AGENT_HOSTS_MARKER,
+    ENVIRONMENT_HOSTS_MARKER,
     TASK_ORG,
     _toml_table,
 )
@@ -24,6 +33,7 @@ CANARY_TASK_ID = "network-canary"
 CANARY_TASK_NAME = f"{TASK_ORG}/{CANARY_TASK_ID}"
 BLOCKED_URLS = ("https://clinicaltrials.gov", "https://pubmed.ncbi.nlm.nih.gov")
 RESULT_PATH = "/logs/artifacts/canary.json"
+AGENT_RESULT_PATH = "/logs/artifacts/canary-agent.json"
 
 _PROBE = r"""#!/usr/bin/env bash
 # Network canary probe. Always exits 0; the verifier judges the result file.
@@ -55,53 +65,73 @@ exit 0
 """
 
 _VERIFY = """#!/usr/bin/env bash
-# Reward 1 only if every blocked URL failed and every allowed host connected.
+# Reward 1 only if, in every probed phase, each blocked URL failed and each
+# allowed host connected.
 set -uo pipefail
 mkdir -p /logs/verifier
 python3 - <<'PY'
 import json, pathlib
 out = pathlib.Path("/logs/verifier")
-path = pathlib.Path("{result_path}")
+phases = json.loads({phases!r})
 reasons = []
-if not path.is_file():
-    reasons.append("canary probe result missing")
-    data = {{}}
-else:
+probes = {{}}
+for phase, path in phases.items():
+    path = pathlib.Path(path)
+    if not path.is_file():
+        reasons.append(f"{{phase}} probe result missing")
+        continue
     data = json.loads(path.read_text())
+    probes[phase] = data
     for url, rc in data.get("blocked", {{}}).items():
         if rc == 0:
-            reasons.append(f"blocked URL reachable: {{url}}")
+            reasons.append(f"{{phase}}: blocked URL reachable: {{url}}")
     for host, rc in data.get("allowed", {{}}).items():
         if rc != 0:
-            reasons.append(f"allowed host unreachable: {{host}} (curl exit {{rc}})")
+            reasons.append(f"{{phase}}: allowed host unreachable: {{host}} (curl exit {{rc}})")
     if not data.get("blocked"):
-        reasons.append("no blocked URLs probed")
+        reasons.append(f"{{phase}}: no blocked URLs probed")
 reward = 0.0 if reasons else 1.0
 (out / "reward.json").write_text(json.dumps({{"reward": reward}}))
-(out / "canary.json").write_text(json.dumps({{"probe": data, "reasons": reasons}}, indent=2))
+(out / "canary.json").write_text(json.dumps({{"probe": probes, "reasons": reasons}}, indent=2))
 print(json.dumps({{"reward": reward, "reasons": reasons}}))
 PY
 """
+
+
+def _probe_script(
+    result_path: str, blocked: Sequence[str], allowed: Sequence[str]
+) -> str:
+    return _PROBE.format(
+        result_path=result_path,
+        blocked=" ".join(shlex.quote(u) for u in blocked),
+        allowed=" ".join(shlex.quote(h) for h in allowed),
+    )
 
 
 def write_canary_task(
     dest: Path,
     *,
     image: str,
-    allowed_hosts: Sequence[str],
+    agent_hosts: Sequence[str],
+    setup_hosts: Sequence[str] = (),
+    agent_probe: bool = False,
 ) -> Path:
-    """Write the canary task into `dest/network-canary` and return its path."""
+    """Write the canary task into `dest/network-canary` and return its path.
+
+    `agent_hosts` are the model API hosts allowed in both phases;
+    `setup_hosts` are added to the setup baseline only. `agent_probe` makes
+    `solution/solve.sh` probe the agent phase, which only Harbor's `oracle`
+    agent runs; the verifier then requires that result too.
+    """
     task = dest / CANARY_TASK_ID
     (task / "environment").mkdir(parents=True, exist_ok=True)
     (task / "tests").mkdir(parents=True, exist_ok=True)
     (task / "solution").mkdir(parents=True, exist_ok=True)
-    probe = _PROBE.format(
-        result_path=RESULT_PATH,
-        blocked=" ".join(shlex.quote(u) for u in BLOCKED_URLS),
-        allowed=" ".join(shlex.quote(h) for h in allowed_hosts),
-    )
-    # The probe is embedded in the healthcheck so it runs under the baseline
-    # policy before the agent starts; nothing is uploaded into /app.
+    environment_hosts = sorted({*agent_hosts, *setup_hosts})
+    setup_only = sorted(set(setup_hosts) - set(agent_hosts))
+    probe = _probe_script(RESULT_PATH, BLOCKED_URLS, agent_hosts)
+    # The setup probe is embedded in the healthcheck so it runs under the
+    # baseline before the agent starts; nothing is uploaded into /app.
     healthcheck = f"bash -c {shlex.quote(probe)}"
     toml = "\n\n".join(
         [
@@ -116,15 +146,24 @@ def write_canary_task(
                 },
             ),
             _toml_table("metadata", {"canary": True}),
-            _toml_table("agent", {"timeout_sec": 300.0, "user": "agent"}),
+            _toml_table(
+                "agent",
+                {
+                    "timeout_sec": 300.0,
+                    "user": "agent",
+                    "network_mode": "allowlist",
+                    "allowed_hosts": list(agent_hosts),
+                },
+                comments={"allowed_hosts": AGENT_HOSTS_MARKER},
+            ),
             _toml_table(
                 "environment",
                 {
                     "network_mode": "allowlist",
-                    "allowed_hosts": list(allowed_hosts),
+                    "allowed_hosts": environment_hosts,
                     "docker_image": image,
                 },
-                comments={"allowed_hosts": AGENT_HOSTS_MARKER},
+                comments={"allowed_hosts": ENVIRONMENT_HOSTS_MARKER},
             ),
             _toml_table(
                 "environment.healthcheck",
@@ -142,12 +181,17 @@ def write_canary_task(
         "files. Reply with the single word OK.\n",
         newline="\n",
     )
-    (task / "solution" / "solve.sh").write_text(
-        "#!/usr/bin/env bash\necho OK\n", newline="\n"
-    )
+    phases = {"setup": RESULT_PATH}
+    if agent_probe:
+        blocked = [*BLOCKED_URLS, *(f"https://{h}" for h in setup_only)]
+        solve = _probe_script(AGENT_RESULT_PATH, blocked, agent_hosts)
+        phases["agent"] = AGENT_RESULT_PATH
+    else:
+        solve = "#!/usr/bin/env bash\necho OK\n"
+    (task / "solution" / "solve.sh").write_text(solve, newline="\n")
     (task / "solution" / "solve.sh").chmod(0o755)
     test_sh = task / "tests" / "test.sh"
-    test_sh.write_text(_VERIFY.format(result_path=RESULT_PATH), newline="\n")
+    test_sh.write_text(_VERIFY.format(phases=json.dumps(phases)), newline="\n")
     test_sh.chmod(0o755)
     (task / "tests" / "Dockerfile").write_text(
         f"FROM {image}\n\nCOPY --chmod=755 test.sh /tests/test.sh\n", newline="\n"

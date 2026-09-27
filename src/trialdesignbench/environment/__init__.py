@@ -2,7 +2,8 @@
 
 The pins below are the single source of truth: `tdb env build` passes them to
 the Dockerfile as build arguments and records them as image labels, and
-`tdb run` refuses agent versions that differ from what the image ships.
+`tdb run` refuses agent versions that differ from these pins. Which agents
+use which pin is recorded in `trialdesignbench.agents`.
 """
 
 from __future__ import annotations
@@ -25,8 +26,11 @@ class ImagePins:
     ubuntu_codename: str = "noble"
     node_version: str = "24.20.0"
     uv_version: str = "0.12.17"
-    claude_code_version: str = "2.1.277"
-    codex_version: str = "0.155.1"
+    # Agent CLIs (Harbor agent versions).
+    claude_code_version: str = "2.1.283"
+    codex_version: str = "0.157.1"
+    grok_build_version: str = "1.0.40"
+    opencode_version: str = "1.18.32"
     pharma_skills_repo: str = "https://github.com/RConsortium/pharma-skills.git"
     pharma_skills_commit: str = "4bd5632509a343a674d0762266f1cea9a6d382ad"
 
@@ -58,16 +62,17 @@ CONTEXT_FILES = (
     "install_r_packages.R",
     "install_skills.sh",
     "check_env.sh",
+    "grok-requirements.toml",
 )
+
+
+OPENCODE_MODELS_PATH = "/opt/tdb/opencode-models.json"
+"""OpenCode model catalog downloaded at image build time. The catalog bundled
+in the OpenCode binary lags behind new models, and trials cannot fetch it."""
 
 
 def default_image() -> str:
     return f"trialdesignbench-env:{package_version()}"
-
-
-def agent_versions() -> dict[str, str]:
-    """Agent CLI versions baked into the image, keyed by Harbor agent name."""
-    return {"claude-code": PINS.claude_code_version, "codex": PINS.codex_version}
 
 
 def dockerfile_text() -> str:

@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from tests.conftest import requires_docker
-from trialdesignbench import environment
+from trialdesignbench import agents, environment
 from trialdesignbench.provenance import docker_image_labels, package_version
 
 
@@ -57,10 +57,8 @@ def test_built_image_matches_pins() -> None:
     if labels is None:
         pytest.skip(f"image {image} not built locally (run `tdb env build`)")
     prefix = environment.LABEL_PREFIX
-    assert (
-        labels[f"{prefix}.claude-code-version"] == environment.PINS.claude_code_version
-    )
-    assert labels[f"{prefix}.codex-version"] == environment.PINS.codex_version
+    for profile in agents.AGENTS:
+        assert labels[profile.image_label] == profile.version, profile.name
     assert (
         labels[f"{prefix}.pharma-skills-commit"]
         == environment.PINS.pharma_skills_commit

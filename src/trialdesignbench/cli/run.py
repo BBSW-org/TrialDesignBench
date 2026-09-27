@@ -9,9 +9,9 @@ from typing import Annotated
 import typer
 from rich.markup import escape
 
+from trialdesignbench.agents import AGENTS, AuthMode
 from trialdesignbench.cli._console import console, fail, warn
 from trialdesignbench.run import (
-    AuthMode,
     RunError,
     execute,
     parse_agent_pairs,
@@ -19,23 +19,29 @@ from trialdesignbench.run import (
     regrade_command,
 )
 
+_AGENT_NAMES = ", ".join(a.name for a in AGENTS)
+_SUBSCRIPTION_AGENTS = ", ".join(a.name for a in AGENTS if a.subscription)
+
 
 def run(
     tasks: Annotated[
         Path, typer.Option("--tasks", help="Harbor tasks dir from `tdb build`.")
     ],
     agent: Annotated[
-        list[str], typer.Option("--agent", help="Harbor agent (repeat for a matrix).")
+        list[str],
+        typer.Option(
+            "--agent", help=f"Harbor agent: {_AGENT_NAMES} (repeat for a matrix)."
+        ),
     ],
     model: Annotated[
         list[str],
-        typer.Option("--model", help="Model, e.g. anthropic/<id> (one per --agent)."),
+        typer.Option(
+            "--model", help="provider/model, e.g. anthropic/<id> (one per --agent)."
+        ),
     ],
     agent_version: Annotated[
         list[str] | None,
-        typer.Option(
-            "--agent-version", help="Must match the version shipped in the image."
-        ),
+        typer.Option("--agent-version", help="Must match the pinned agent version."),
     ] = None,
     n_attempts: Annotated[int, typer.Option("--n-attempts", min=1)] = 1,
     n_concurrent: Annotated[
@@ -44,7 +50,13 @@ def run(
             "--n-concurrent", min=1, help="Default 2 (api) or 1 (subscription)."
         ),
     ] = None,
-    auth: Annotated[str, typer.Option("--auth", help="api or subscription.")] = "api",
+    auth: Annotated[
+        str,
+        typer.Option(
+            "--auth",
+            help=f"api (provider API key) or subscription ({_SUBSCRIPTION_AGENTS}).",
+        ),
+    ] = "api",
     skill: Annotated[
         list[str] | None,
         typer.Option(

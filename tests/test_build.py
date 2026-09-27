@@ -11,6 +11,7 @@ from tests.conftest import FIXTURE_INTAKE, FIXTURE_TASK_ID
 from trialdesignbench.build import (
     AGENT_HOSTS_MARKER,
     BUILD_MANIFEST,
+    ENVIRONMENT_HOSTS_MARKER,
     BuildOptions,
     build_tasks,
     default_template,
@@ -50,12 +51,19 @@ def test_task_toml_fields(tasks_dir: Path) -> None:
         meta["n_derivation_required"],
     ) == (8, 5, 3)
     assert "Sample size and power" in meta["design_elements"]
-    assert config["agent"] == {"timeout_sec": 3600.0, "user": "agent"}
+    # Two network phases, both deny-all until `tdb run` fills them: the
+    # [agent] allowlist for agent.run(), the [environment] baseline for setup.
+    assert config["agent"] == {
+        "timeout_sec": 3600.0,
+        "user": "agent",
+        "network_mode": "allowlist",
+        "allowed_hosts": [],
+    }
     env = config["environment"]
     assert env["docker_image"] == IMAGE
     assert env["skills_dir"] == "/skills"
     assert env["network_mode"] == "allowlist"
-    assert env["allowed_hosts"] == []  # filled by `tdb run`
+    assert env["allowed_hosts"] == []
     verifier = config["verifier"]
     assert verifier["environment_mode"] == "separate"
     assert verifier["timeout_sec"] == 1800.0
@@ -63,13 +71,23 @@ def test_task_toml_fields(tasks_dir: Path) -> None:
     assert verifier["env"]["TDB_JUDGE_MODEL"]
     assert verifier["environment"]["network_mode"] == "allowlist"
     assert verifier["environment"]["allowed_hosts"] == ["api.anthropic.com"]
-    assert "agent" not in {k for k in config if k == "network_mode"}
-    assert "network_mode" not in config["agent"]  # no phase overrides
+    assert "network_mode" not in verifier  # no verifier phase override
 
 
-def test_placeholder_marker_present(tasks_dir: Path) -> None:
+def test_placeholder_markers_present(tasks_dir: Path) -> None:
     text = (tasks_dir / FIXTURE_TASK_ID / "task.toml").read_text()
     assert text.count(AGENT_HOSTS_MARKER) == 1
+    assert text.count(ENVIRONMENT_HOSTS_MARKER) == 1
+
+
+def test_task_toml_parses_with_harbor(tasks_dir: Path) -> None:
+    harbor_task = pytest.importorskip(
+        "harbor.models.task.config", reason="harbor not installed"
+    )
+    config = harbor_task.TaskConfig.model_validate_toml(
+        (tasks_dir / FIXTURE_TASK_ID / "task.toml").read_text()
+    )
+    assert config.agent.explicit_phase_policy() is not None
 
 
 def test_instruction_contents(tasks_dir: Path, dataset_dir: Path) -> None:

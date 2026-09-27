@@ -34,7 +34,7 @@ reward score to 0 while the raw `rubric_score` is kept.
 | `output_json` | yes | `output.json` parses; it has a single top-level `output` array; ids match the skeleton exactly (none missing, extra, or duplicated); no fields added, removed, or renamed; skeleton values unchanged; every previously null field is filled (a "not derivable" string counts, blank strings do not) |
 | `output_r` | yes | `output.R` exists and `Rscript output.R` exits 0 within the timeout (default 600 s). It runs in a scratch copy of the submission. A missing R runtime is `error`, never `pass`. |
 | `numeric_format` | no | every `calculated_value` has a number with at least 4 decimals and none with 1 to 3, or says the value is not derivable. Reported only. |
-| `network` | yes | the ATIF trajectory has no web tool calls (`WebSearch`, `WebFetch`, `web_search_call`, `google_web_search`), no `http(s)://` URL in any tool arguments, and no shell command using `curl`, `wget`, `download.file`, `httr`, `requests`, `urllib`, `pip install`, `install.packages`, or `git clone`. Each hit is listed under `network_violations` with its step index. A missing trajectory is `error`. |
+| `network` | yes | the ATIF trajectory has no web tool calls (`WebSearch`, `WebFetch`, `web_search`, `web_fetch`, `web_search_call`, `google_web_search`, matched case-insensitively), no `http(s)://` URL in any tool arguments, and no shell command using `curl`, `wget`, `download.file`, `httr`, `requests`, `urllib`, `pip install`, `install.packages`, or `git clone`. Each hit is listed under `network_violations` with its step index. A missing trajectory is `error`. |
 
 The trajectory is taken from `--trajectory`, else `<submission>/trajectory.json`,
 else `/logs/agent/trajectory.json`. External submissions without a trajectory
@@ -55,7 +55,9 @@ a quoted evidence excerpt.
 
 The default `AnthropicJudge` uses the Anthropic Messages API with structured
 JSON output (`output_config.format`), model `claude-opus-5` unless
-`--judge-model` or `TDB_JUDGE_MODEL` says otherwise. `temperature=0` is sent
+`--judge-model` or `TDB_JUDGE_MODEL` says otherwise. Model choice,
+credentials (`ANTHROPIC_API_KEY`), and network access are covered in
+[Judge](judge.md). `temperature=0` is sent
 to models that accept sampling parameters. Transient errors (rate limits,
 5xx, truncated or malformed responses) are retried with backoff. After the
 retries, every criterion of that question is marked `error`. `--judge-votes K`
