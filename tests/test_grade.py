@@ -299,12 +299,25 @@ def test_clean_trajectory_has_no_violations() -> None:
     assert scan_trajectory(trajectory(calls)) == []
 
 
+@pytest.mark.parametrize(
+    "content",
+    [
+        "{not json",
+        "[]",
+        "null",
+        '{"no_steps": true}',
+        '{"steps": null}',
+        '{"steps": {}}',
+    ],
+)
 def test_malformed_trajectory_is_error(
-    make_submission: Callable[..., Path], rubrics: RubricSet
+    make_submission: Callable[..., Path], rubrics: RubricSet, content: str
 ) -> None:
-    g = grade(make_submission(traj={"no_steps": True}), rubrics)
+    sub = make_submission()
+    (sub / "trajectory.json").write_text(content)
+    g = grade(sub, rubrics)
     assert check(g, "network").status == "error"
-    assert g.score == 0.0
+    assert g.status == "error" and g.score == 0.0
 
 
 def test_judge_exception_marks_errors_and_zeroes(

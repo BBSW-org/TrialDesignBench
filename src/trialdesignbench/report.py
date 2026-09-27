@@ -356,8 +356,10 @@ def render_markdown(report: ReportSummary) -> str:
     lines = [
         "# TrialDesignBench report",
         "",
-        f"Scoring version {report.scoring_version}; pass threshold "
-        f"{report.threshold:g}; {len(report.task_ids)} task(s).",
+        (
+            f"Scoring version {report.scoring_version}; pass threshold "
+            f"{report.threshold:g}; {len(report.task_ids)} task(s)."
+        ),
         "",
         "| Rank | Agent | Model | Mean score | Pass rate | Attempted | Errored trials |",
         "| --- | --- | --- | --- | --- | --- | --- |",

@@ -283,7 +283,7 @@ def check_output_r(
         shutil.copytree(submission_dir, work, symlinks=True)
         try:
             result = run_rscript(work / OUTPUT_R, work, timeout_sec)
-        except Exception as exc:  # the runner itself broke: never a pass
+        except Exception as exc:  # noqa: BLE001 - every runner failure must be recorded
             return (
                 _check(
                     name, "error", f"Rscript runner failed: {type(exc).__name__}: {exc}"
@@ -390,7 +390,7 @@ def scan_trajectory(trajectory: Mapping[str, Any]) -> list[NetworkViolation]:
     violations: list[NetworkViolation] = []
     steps = trajectory.get("steps")
     if not isinstance(steps, list):
-        raise ValueError("trajectory has no `steps` list")
+        raise TypeError("trajectory has no `steps` list")
     for index, step in enumerate(steps):
         if not isinstance(step, dict):
             continue
@@ -401,11 +401,18 @@ def scan_trajectory(trajectory: Mapping[str, Any]) -> list[NetworkViolation]:
             args = call.get("arguments")
             texts = _strings(args)
 
-            def add(reason: str, excerpt: str, *, _tool: str = tool) -> None:
+            def add(
+                reason: str,
+                excerpt: str,
+                *,
+                _tool: str = tool,
+                _index: int = index,
+                _step_id: int | str | None = step.get("step_id"),
+            ) -> None:
                 violations.append(
                     NetworkViolation(
-                        step_index=index,
-                        step_id=step.get("step_id"),
+                        step_index=_index,
+                        step_id=_step_id,
                         tool_name=_tool,
                         reason=reason,
                         excerpt=excerpt[:300],
@@ -451,9 +458,9 @@ def check_trajectory(
     try:
         trajectory = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(trajectory, dict):
-            raise ValueError("trajectory must be a JSON object")
+            raise TypeError("trajectory must be a JSON object")
         violations = scan_trajectory(trajectory)
-    except (OSError, UnicodeDecodeError, ValueError) as exc:
+    except (OSError, UnicodeDecodeError, ValueError, TypeError) as exc:
         return (
             _check(name, "error", f"cannot scan trajectory: {exc}"),
             [],
@@ -519,8 +526,10 @@ def grade_question(
     excluded = _excluded(q)
     warnings = (
         [
-            f"{question.id}: {len(excluded)} criterion(s) with unsupported scoring "
-            f"{sorted({c.scoring for c in excluded})} excluded from the score"
+            (
+                f"{question.id}: {len(excluded)} criterion(s) with unsupported scoring "
+                f"{sorted({c.scoring for c in excluded})} excluded from the score"
+            )
         ]
         if excluded
         else []
@@ -567,7 +576,7 @@ def grade_question(
                 raise RuntimeError(
                     f"judge returned criteria {sorted(got)}, expected {sorted(want)}"
                 )
-        except Exception as exc:  # any judge failure is an explicit error
+        except Exception as exc:  # noqa: BLE001 - every judge failure must be recorded
             results = error_results(
                 question, scored, f"judge error: {type(exc).__name__}: {exc}"
             )

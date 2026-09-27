@@ -203,8 +203,10 @@ def render_task_toml(
         "build_timeout_sec": 3600.0,
     }
     sections = [
-        f'schema_version = "{HARBOR_TASK_SCHEMA}"\n'
-        f"artifacts = {_toml_value(list(ARTIFACTS))}",
+        (
+            f'schema_version = "{HARBOR_TASK_SCHEMA}"\n'
+            f"artifacts = {_toml_value(list(ARTIFACTS))}"
+        ),
         _toml_table(
             "task",
             {
