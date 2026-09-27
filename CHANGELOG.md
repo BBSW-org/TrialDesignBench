@@ -1,5 +1,50 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### New features
+
+- `tdb run` supports Grok Build 1.0.40 (`grok-build`, `xai/` models) and
+  OpenCode 1.18.32 (`opencode`, `anthropic/`, `openai/`, and `xai/` models)
+  besides Claude Code and Codex CLI, with per-provider API key checks and
+  closed-book settings that remove their web search and URL fetch tools.
+- New `trialdesignbench.agents` module: the single list of supported agents
+  (providers, credentials, hosts, pins, closed-book kwargs and env) and of
+  refused agents with the reason. `tdb run` refuses `antigravity-sdk` and
+  `antigravity-cli` (web tools cannot be disabled through Harbor),
+  `kimi-code` and `muse-code` (no ATIF trajectory), and any other unlisted
+  Harbor agent.
+- Two-phase network allowlists: `task.toml` now has an `[agent]` allowlist
+  (model API hosts, applied during `agent.run()`) and an `[environment]`
+  baseline (applied during agent setup), so agents that Harbor installs at
+  setup can reach their install hosts only then. Tasks built by 1.0.0 must be
+  rebuilt with `tdb build`.
+- The network canary follows the two phases. `tdb env check --canary` also
+  probes the agent phase with Harbor's `oracle` agent and requires the
+  install hosts to be blocked there; its new `--provider` option picks the
+  model API for agents with several providers.
+
+### Improvements
+
+- `--model` must be `<provider>/<model>` with a provider the agent supports,
+  so the allowlisted API host always matches the model.
+- The environment image adds a root-owned `/etc/grok/requirements.toml`
+  that pins Grok Build's web search and URL fetch off, pre-seeds OpenCode's
+  plugin package, bundles OpenCode's model catalog, and labels every agent
+  pin, which `tdb run` checks against the image.
+- `tdb-run.json` records the setup allowlist and each agent's setup hosts;
+  the host table version is now 2.
+- Documentation: new Agents article (supported and refused agents, explicit
+  credential setup for each agent and auth mode, closed-book settings,
+  network hosts, and how to add an agent) and Judge article (model,
+  `ANTHROPIC_API_KEY`, network), separate from agent usage. The Gemini CLI
+  caveat is replaced by the Antigravity one.
+
+### Bug fixes
+
+- `tdb env check` now fails when a tool is missing from the image.
+  `check_env.sh` printed `MISSING` but still exited 0.
+
 ## trialdesignbench 1.0.0
 
 This release replaces the Mathpix/Codex ingestion pipeline with an

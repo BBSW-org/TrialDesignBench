@@ -78,6 +78,20 @@ def test_codex_subscription_file(
     }
 
 
+def test_docs_list_every_agent() -> None:
+    """docs/articles/agents.md must stay in sync with the registry."""
+    text = (ROOT / "docs/articles/agents.md").read_text()
+    for profile in agents.AGENTS:
+        row = re.search(rf"^\| `{re.escape(profile.name)}` \|.*$", text, re.MULTILINE)
+        assert row, f"{profile.name} missing from the supported agents table"
+        assert profile.version in row.group(0)
+    for name in agents.REFUSED_AGENTS:
+        assert f"`{name}`" in text
+    readme = (ROOT / "README.md").read_text()
+    for profile in agents.AGENTS:
+        assert f"`{profile.name}`" in readme
+
+
 def test_canary_probes_both_phases(tmp_path: Path) -> None:
     task = write_canary_task(
         tmp_path,

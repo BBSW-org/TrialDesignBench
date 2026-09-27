@@ -27,9 +27,13 @@ The benchmark currently focuses on two core tasks:
 TrialDesignBench is a thin evaluation framework. It owns the task schema,
 task materialization, the grader, scoring rules, aggregation, and provenance.
 [Harbor](https://github.com/harbor-framework/harbor) is the execution backend
-that runs first-party agent harnesses (Claude Code, Codex CLI) in Docker. The
-two meet only through files: Harbor task directories, a generated `job.yaml`,
-and the job directory Harbor writes.
+that runs first-party agent harnesses in Docker. The two meet only through
+files: Harbor task directories, a generated `job.yaml`, and the job directory
+Harbor writes.
+
+Supported agents are `claude-code` (Claude Code), `codex` (Codex CLI),
+`grok-build` (Grok Build), and `opencode` (OpenCode). Other Harbor agents
+are refused because they cannot run closed book.
 
 - **Hidden rubrics.** Agents see the prompt template, the question skeleton,
   and the source document. Rubrics live only in each task's `tests/`
@@ -40,11 +44,12 @@ and the job directory Harbor writes.
   recorded runs can be regraded and external submissions compared.
 - **Fail loudly.** Every grading error is an explicit status and zeroes the
   reward; a missing R runtime or trajectory is never a pass.
-- **Closed book, enforced.** Egress is an allowlist of model API hosts,
-  server-side web tools are disabled in the harness, the grader scans the
-  trajectory for violations, and a network canary proves the policy holds.
+- **Closed book, enforced.** While the agent runs, egress is an allowlist of
+  model API hosts; server-side web tools are disabled in the harness, the
+  grader scans the trajectory for violations, and a network canary proves the
+  policy holds.
 - **One pinned image** for agent and verifier: R with a dated CRAN snapshot,
-  Python, Node, pinned agent CLIs, and the
+  Python, Node, pinned agent CLIs and closed-book agent settings, and the
   [pharma skills](https://github.com/RConsortium/pharma-skills).
 
 ## Installation
@@ -74,7 +79,10 @@ uv run tdb dataset check tmp/dataset
 uv run tdb env build
 uv run tdb build tmp/dataset --out tmp/tasks
 
-# Run an agent with the network canary, then aggregate
+# Run an agent with the network canary, then aggregate. The agent reads its
+# provider's API key (here ANTHROPIC_API_KEY); the rubric judge always needs
+# ANTHROPIC_API_KEY.
+export ANTHROPIC_API_KEY=...
 uv run tdb run --tasks tmp/tasks --agent claude-code \
   --model anthropic/claude-opus-5 --n-attempts 3 --canary
 uv run tdb report jobs/<job-name> --format md
@@ -85,5 +93,6 @@ uv run tdb grade path/to/submission --rubrics tmp/dataset/<task_id>/rubrics.json
 ```
 
 See the [documentation](https://bbsw-org.github.io/TrialDesignBench/) for the
-dataset format, environment and network policy, grading rules, and
-reproducibility guarantees.
+dataset format, supported agents and their credentials, the judge,
+environment and network policy, grading rules, and reproducibility
+guarantees.

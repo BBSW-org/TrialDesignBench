@@ -45,10 +45,15 @@ the test suite checks this.
 - `[task] name = "trialdesignbench/<task_id>"`, version = dataset version.
 - `[metadata]`: trial id, task type, question counts, design elements, dataset
   version and digest, template hash, grader source.
-- `[agent] timeout_sec = 3600`, `user = "agent"`.
+- `[agent] timeout_sec = 3600`, `user = "agent"`, `network_mode =
+  "allowlist"`, and `allowed_hosts = []` marked `# tdb:agent-allowed-hosts`:
+  the allowlist during `agent.run()`, filled by `tdb run` with the model API
+  hosts.
 - `[environment]`: `docker_image`, `skills_dir = "/skills"`, cpus and memory,
   `network_mode = "allowlist"`, and `allowed_hosts = []` marked
-  `# tdb:agent-allowed-hosts` for `tdb run` to fill.
+  `# tdb:environment-allowed-hosts`: the baseline during agent setup, filled
+  by `tdb run` with the model API hosts plus any install hosts (see
+  [Run](run.md#network-allowlists)).
 - `[verifier] environment_mode = "separate"`, `timeout_sec = 1800`.
 - `[verifier.env]`: `TDB_JUDGE_MODEL` and
   `ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"`.

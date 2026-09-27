@@ -3,8 +3,9 @@
 TrialDesignBench is a thin evaluation framework. It owns the task schema,
 task materialization, the grader, scoring rules, aggregation, and provenance.
 [Harbor](https://github.com/harbor-framework/harbor) is the execution backend:
-it runs first-party agent harnesses (Claude Code, Codex CLI) inside Docker
-with concurrency, retries, trajectories, and token accounting.
+it runs first-party agent harnesses (Claude Code, Codex CLI, Grok Build,
+OpenCode; see [Agents](agents.md)) inside Docker with concurrency, retries,
+trajectories, and token accounting.
 
 The two tools meet only through files:
 
@@ -51,6 +52,7 @@ uv run tdb env check --canary
 uv run tdb build tmp/dataset --out tmp/tasks
 
 # 4. Run agents (needs `trialdesignbench[harbor]` on Python 3.12+)
+export ANTHROPIC_API_KEY=...   # the agent's model API key and the judge's key
 uv run tdb run --tasks tmp/tasks --agent claude-code --model anthropic/claude-opus-5 \
   --n-attempts 3 --canary
 
@@ -63,7 +65,9 @@ Each step has its own article:
 - [Dataset](dataset.md): intake import, the canonical format, documents.
 - [Environment](environment.md): the shared image and the network policy.
 - [Build](build.md): Harbor task materialization.
-- [Run](run.md): `job.yaml`, auth modes, matrices, regrading.
-- [Grade](grade.md): deterministic checks, the rubric judge, scoring.
+- [Agents](agents.md): supported agents, credentials, closed-book settings.
+- [Run](run.md): `job.yaml`, network allowlists, matrices, regrading.
+- [Grade](grade.md): deterministic checks, rubric judging, scoring.
+- [Judge](judge.md): judge model, credentials, and network access.
 - [Report](report.md): aggregation and leaderboards.
 - [Reproducibility](reproducibility.md): what is pinned and recorded.

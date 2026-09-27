@@ -12,7 +12,8 @@ Harbor.
 | [`judge`](judge.md) | Judge protocol, `AnthropicJudge`, `FakeJudge` |
 | [`grade`](grade.md) | Deterministic checks, rubric judging, grade outputs |
 | [`scoring`](scoring.md) | Versioned scoring rules |
-| [`run`](run.md) | `job.yaml` generation, auth, network host table |
+| [`agents`](agents.md) | Supported agents: providers, credentials, hosts, closed-book settings |
+| [`run`](run.md) | `job.yaml` generation, allowlists, provenance manifest |
 | [`canary`](canary.md) | Network canary task |
 | [`report`](report.md) | Aggregation and leaderboards |
 | [`provenance`](provenance.md) | Digests, versions, git and image identifiers |
