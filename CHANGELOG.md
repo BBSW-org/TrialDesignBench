@@ -1,5 +1,11 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Maintenance
+
+- Update the Docker image bundled dependency versions: R 4.6.1, uv 0.12.19, Node 24.21.0 (#82).
+
 ## trialdesignbench 1.1.0
 
 ### New features
