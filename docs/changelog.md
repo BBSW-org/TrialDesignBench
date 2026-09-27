@@ -1,6 +1,6 @@
 # Changelog
 
-## trialdesignbench (development version)
+## trialdesignbench 1.1.0
 
 ### New features
 
@@ -36,16 +36,20 @@
   pin, which `tdb run` checks against the image.
 - `tdb-run.json` records the setup allowlist and each agent's setup hosts;
   the host table version is now 2.
-- Documentation: new Agents article (supported and refused agents, explicit
-  credential setup for each agent and auth mode, closed-book settings,
-  network hosts, and how to add an agent) and Judge article (model,
-  `ANTHROPIC_API_KEY`, network), separate from agent usage. The Gemini CLI
-  caveat is replaced by the Antigravity one.
 
 ### Bug fixes
 
 - `tdb env check` now fails when a tool is missing from the image.
   `check_env.sh` printed `MISSING` but still exited 0.
+
+### Documentation
+
+- Add new Agents article: supported and refused agents, explicit credential
+  setup for each agent and auth mode, closed-book settings, network hosts,
+  and how to add an agent. The Gemini CLI caveat is replaced by the
+  Antigravity one.
+- Add new Judge article (model, `ANTHROPIC_API_KEY`, network), separate from
+  agent usage.
 
 ## trialdesignbench 1.0.0
 
