@@ -24,7 +24,7 @@ The benchmark currently focuses on two core tasks:
 
 ## How it works
 
-TrialDesignBench is a thin evaluation framework. It owns the task schema,
+This Python package is a thin evaluation framework. It owns the task schema,
 task materialization, the grader, scoring rules, aggregation, and provenance.
 [Harbor](https://github.com/harbor-framework/harbor) is the execution backend
 that runs first-party agent harnesses in Docker. The two meet only through
@@ -93,6 +93,5 @@ uv run tdb grade path/to/submission --rubrics tmp/dataset/<task_id>/rubrics.json
 ```
 
 See the [documentation](https://bbsw-org.github.io/TrialDesignBench/) for the
-dataset format, supported agents and their credentials, the judge,
-environment and network policy, grading rules, and reproducibility
-guarantees.
+dataset format, supported agents and their credentials, the judge, environment
+and network policy, grading rules, and reproducibility guarantees.

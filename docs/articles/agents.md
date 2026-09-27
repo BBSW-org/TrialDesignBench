@@ -16,7 +16,7 @@ refuses any other agent.
 | Agent | Harness | Pinned version | Installed | `--model` providers | `--auth` |
 | --- | --- | --- | --- | --- | --- |
 | `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.283 | in the image | `anthropic` | `api`, `subscription` |
-| `codex` | [Codex CLI](https://developers.openai.com/codex) | 0.157.1 | in the image | `openai` | `api`, `subscription` |
+| `codex` | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) | 0.157.1 | in the image | `openai` | `api`, `subscription` |
 | `grok-build` | [Grok Build](https://docs.x.ai/build/overview) | 1.0.40 | by Harbor at setup | `xai` | `api` |
 | `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.18.32 | by Harbor at setup | `anthropic`, `openai`, `xai` | `api` |
 
@@ -61,7 +61,7 @@ Export the key for the provider of each `--model`:
 | --- | --- | --- | --- |
 | `anthropic` | `ANTHROPIC_API_KEY` | `api.anthropic.com` | [Claude Console](https://platform.claude.com/) |
 | `openai` | `OPENAI_API_KEY` | `api.openai.com` | [OpenAI Platform](https://platform.openai.com/api-keys) |
-| `xai` | `XAI_API_KEY` | `api.x.ai` | [xAI Console](https://console.x.ai/) |
+| `xai` | `XAI_API_KEY` | `api.x.ai` | [xAI Console](https://console.x.ai/home) |
 
 ```bash
 export ANTHROPIC_API_KEY=...   # agent (anthropic/ models) and the judge

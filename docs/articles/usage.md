@@ -1,6 +1,6 @@
 # Overview
 
-TrialDesignBench is a thin evaluation framework. It owns the task schema,
+`trialdesignbench` is a thin evaluation framework. It owns the task schema,
 task materialization, the grader, scoring rules, aggregation, and provenance.
 [Harbor](https://github.com/harbor-framework/harbor) is the execution backend:
 it runs first-party agent harnesses (Claude Code, Codex CLI, Grok Build,
@@ -15,7 +15,7 @@ The two tools meet only through files:
 - the job directory Harbor writes (`result.json`, `verifier/reward.json`,
   `verifier/reward-details.json`, `agent/trajectory.json`).
 
-TrialDesignBench never imports Harbor, so the core package stays light and
+`trialdesignbench` never imports Harbor, so the core package stays light and
 runs on Python 3.10+. Harbor is an optional extra that needs Python 3.12+.
 
 ## Pipeline

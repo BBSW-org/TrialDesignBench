@@ -64,6 +64,6 @@ def test_built_image_matches_pins() -> None:
         == environment.PINS.pharma_skills_commit
     )
     result = subprocess.run(
-        environment.check_command(image), capture_output=True, text=True
+        environment.check_command(image), capture_output=True, text=True, check=False
     )
     assert result.returncode == 0, result.stdout + result.stderr

@@ -459,7 +459,8 @@ class AnthropicJudge:
                     self._sleep(min(60.0, 2.0**attempt + random.uniform(0, 1)))
                     attempt += 1
                     continue
-                except Exception as exc:  # non-retryable: auth, bad request, refusal
+                # Record all non-retryable failures, including auth and refusal.
+                except Exception as exc:  # noqa: BLE001
                     record["error"] = f"{type(exc).__name__}: {exc}"
                     exchanges.append(record)
                     return self._failed(question, criteria, params, exchanges)

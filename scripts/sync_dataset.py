@@ -50,6 +50,7 @@ def _set_data_dir(data_dir: Path) -> None:
     PARQUET_PATH = ROOT / "data" / "tdr.parquet"
     DOCS_DIR = ROOT / "documents"
 
+
 UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -195,9 +196,7 @@ def _row_missing_pdfs(row: dict[str, str]) -> bool:
     row_dir = DOCS_DIR / slug
     if protocol and not (row_dir / "protocol.pdf").exists():
         return True
-    if sap and not (row_dir / "sap.pdf").exists():
-        return True
-    return False
+    return bool(sap and not (row_dir / "sap.pdf").exists())
 
 
 def download_for_row(row: dict[str, str]) -> list[Path]:
@@ -236,9 +235,7 @@ def download_for_row(row: dict[str, str]) -> list[Path]:
         if ok and not existed:
             new_files.append(dest)
         elif not ok:
-            (row_dir / "sap.error.txt").write_text(
-                f"{sap}\n{msg}\n", encoding="utf-8"
-            )
+            (row_dir / "sap.error.txt").write_text(f"{sap}\n{msg}\n", encoding="utf-8")
 
     return new_files
 
@@ -270,8 +267,12 @@ def hf_upload(paths: list[Path]) -> None:
     # if the new-row set is large.
     if len(rels) > 200:
         cmd = [
-            hf, "upload-large-folder", HF_REPO, str(ROOT),
-            "--repo-type=dataset", "--num-workers=4",
+            hf,
+            "upload-large-folder",
+            HF_REPO,
+            str(ROOT),
+            "--repo-type=dataset",
+            "--num-workers=4",
         ]
         subprocess.run(cmd, check=True)
         return
@@ -305,7 +306,9 @@ def main() -> None:
     existing_ids = read_existing_ids()
     print(f"Local parquet has {len(existing_ids)} rows.")
 
-    new_in_sheet = [r for r in new_rows_all if (r.get("#") or "").strip() not in existing_ids]
+    new_in_sheet = [
+        r for r in new_rows_all if (r.get("#") or "").strip() not in existing_ids
+    ]
     rows_needing_pdfs = [r for r in new_rows_all if _row_missing_pdfs(r)]
     print(f"New rows in sheet (vs parquet #): {len(new_in_sheet)}")
     print(f"Rows missing PDFs on disk: {len(rows_needing_pdfs)}")
