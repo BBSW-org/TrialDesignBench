@@ -6,11 +6,11 @@ One shared, pinned Docker image serves both the agent and the verifier.
 
 | Component | Pin |
 | --- | --- |
-| Base | `rocker/r-ver:4.5.2` (multi-arch: amd64, arm64) |
-| CRAN packages | Posit Package Manager snapshot `2026-09-25` |
+| Base | `rocker/r-ver:4.6.1` (multi-arch: amd64, arm64) |
+| CRAN packages | Posit Package Manager snapshot `2026-09-27` |
 | R packages | gsDesign, gsDesign2, rpact, lrstat, graphicalMCP, eventPred, survival, mvtnorm, jsonlite, dplyr, ggplot2, digest |
-| Python | 3.12 (Ubuntu noble) with `uv` 0.12.17 |
-| Node | 24.20.0 LTS |
+| Python | 3.12 (Ubuntu noble) with `uv` 0.12.19 |
+| Node | 24.21.0 LTS |
 | Agent CLIs | Claude Code 2.1.283, Codex CLI 0.157.1 (preinstalled) |
 | Agent settings | `/etc/grok/requirements.toml` for Grok Build 1.0.40; OpenCode 1.18.32 plugin package and model catalog (both CLIs are installed by Harbor at setup) |
 | Skills | `RConsortium/pharma-skills` at a pinned commit, in `/skills/<name>/SKILL.md` |
