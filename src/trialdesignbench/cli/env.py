@@ -11,10 +11,10 @@ from typing import Annotated
 import typer
 from rich.markup import escape
 
-from trialdesignbench import environment
+from trialdesignbench import agents, environment
+from trialdesignbench.agents import AgentError, AuthMode
 from trialdesignbench.canary import write_canary_task
 from trialdesignbench.cli._console import console, fail, warn
-from trialdesignbench.run import AuthMode, RunError, allowed_hosts
 
 app = typer.Typer(
     help="Build and check the shared environment image.", no_args_is_help=True
@@ -79,12 +79,24 @@ def check(
         typer.Option("--canary", help="Also run the network canary through Harbor."),
     ] = False,
     agent: Annotated[
-        str, typer.Option("--agent", help="Agent whose API hosts the canary allows.")
+        str, typer.Option("--agent", help="Agent whose hosts the canary allows.")
     ] = "claude-code",
+    provider: Annotated[
+        str | None,
+        typer.Option(
+            "--provider",
+            help="Model provider for --auth api (default: the agent's first).",
+        ),
+    ] = None,
     auth: Annotated[str, typer.Option("--auth", help="api or subscription.")] = "api",
     jobs_dir: Annotated[Path, typer.Option("--jobs-dir")] = Path("jobs"),
 ) -> None:
-    """Check the image's R packages and tools, and optionally the network canary."""
+    """Check the image's R packages and tools, and optionally the network canary.
+
+    The canary runs with Harbor's `oracle` agent and probes both network
+    phases: agent setup (model API and install hosts) and the agent run
+    (model API hosts only).
+    """
     image = tag or environment.default_image()
     host_warning = environment.docker_host_warning()
     if host_warning:
@@ -99,14 +111,23 @@ def check(
         fail("--auth must be api or subscription")
     mode: AuthMode = auth  # type: ignore[assignment]
     try:
-        hosts = allowed_hosts(agent, mode).hosts
-    except RunError as exc:
+        profile = agents.get_profile(agent)
+        chosen = provider or profile.providers[0]
+        agents.model_provider(profile, f"{chosen}/canary")
+        hosts = agents.api_hosts(profile, mode, chosen)
+    except AgentError as exc:
         fail(str(exc))
     if shutil.which("harbor") is None:
         fail("`harbor` not found; install `trialdesignbench[harbor]` (Python 3.12+)")
     with tempfile.TemporaryDirectory(prefix="tdb-canary-") as tmp:
-        task = write_canary_task(Path(tmp), image=image, allowed_hosts=hosts)
-        job_name = f"canary-{agent}-{auth}"
+        task = write_canary_task(
+            Path(tmp),
+            image=image,
+            agent_hosts=hosts,
+            setup_hosts=profile.setup_hosts,
+            agent_probe=True,
+        )
+        job_name = f"canary-{agent}-{chosen}-{auth}"
         cmd = [
             "harbor",
             "run",
@@ -132,6 +153,8 @@ def check(
         console.print_json(data=data)
         if data.get("reasons"):
             fail("network canary FAILED: " + "; ".join(data["reasons"]))
+    setup = ", ".join(profile.setup_hosts) or "none"
     console.print(
-        f"[green]ok[/green] network canary for {agent} ({auth}): {', '.join(hosts)}"
+        f"[green]ok[/green] network canary for {agent} ({auth}): agent phase "
+        f"{', '.join(hosts)}; setup adds {setup}"
     )

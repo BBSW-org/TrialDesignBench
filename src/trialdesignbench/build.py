@@ -11,8 +11,12 @@ Each task gets:
         test.sh          runs `tdb grade`
         rubrics.json     hidden grading spec
 
-The agent-phase `allowed_hosts` is written as an empty list with a marker
-comment; `tdb run` fills it per agent and auth mode.
+Network policy has two phases. `[environment]` is the baseline during agent
+setup (and the healthcheck); `[agent]` applies during `agent.run()`. Both
+`allowed_hosts` lists are written empty (deny all) with marker comments;
+`tdb run` fills them per agent and auth mode: the model API hosts for the
+agent phase, plus Harbor's install hosts for the setup baseline when the
+agent is not preinstalled in the image.
 """
 
 from __future__ import annotations
@@ -44,6 +48,7 @@ TASK_ORG = "trialdesignbench"
 HARBOR_TASK_SCHEMA = "1.4"
 BUILD_MANIFEST = "tdb-build.json"
 AGENT_HOSTS_MARKER = "# tdb:agent-allowed-hosts"
+ENVIRONMENT_HOSTS_MARKER = "# tdb:environment-allowed-hosts"
 JUDGE_API_HOST = "api.anthropic.com"
 PYPI_HOSTS = ("pypi.org", "files.pythonhosted.org")
 ARTIFACTS = ("/app/output.json", "/app/output.R", "/logs/agent/trajectory.json")
@@ -214,9 +219,18 @@ def render_task_toml(
         ),
         _toml_table("metadata", metadata),
         _toml_table(
-            "agent", {"timeout_sec": options.agent_timeout_sec, "user": "agent"}
+            "agent",
+            {
+                "timeout_sec": options.agent_timeout_sec,
+                "user": "agent",
+                "network_mode": "allowlist",
+                "allowed_hosts": [],
+            },
+            comments={"allowed_hosts": AGENT_HOSTS_MARKER},
         ),
-        _toml_table("environment", env, comments={"allowed_hosts": AGENT_HOSTS_MARKER}),
+        _toml_table(
+            "environment", env, comments={"allowed_hosts": ENVIRONMENT_HOSTS_MARKER}
+        ),
         _toml_table(
             "verifier",
             {

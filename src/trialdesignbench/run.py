@@ -2,7 +2,8 @@
 
 Harbor is driven through files only: this module writes task copies and a
 job config, runs the `harbor` CLI, and records a `tdb-run.json` manifest. It
-never imports Harbor.
+never imports Harbor. Per-agent settings (hosts, credentials, closed-book
+kwargs) come from `trialdesignbench.agents`.
 
 Layout for `--jobs-dir J --job-name N`:
 
@@ -17,6 +18,7 @@ subdirectory of a job without a `result.json` when a job is resumed.
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import re
@@ -26,10 +28,16 @@ import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
-from trialdesignbench import environment
-from trialdesignbench.build import AGENT_HOSTS_MARKER, BUILD_MANIFEST, JUDGE_API_HOST
+from trialdesignbench import agents, environment
+from trialdesignbench.agents import HOST_TABLE_VERSION, AgentError, AuthMode
+from trialdesignbench.build import (
+    AGENT_HOSTS_MARKER,
+    BUILD_MANIFEST,
+    ENVIRONMENT_HOSTS_MARKER,
+    JUDGE_API_HOST,
+)
 from trialdesignbench.canary import write_canary_task
 from trialdesignbench.provenance import (
     digest_tree,
@@ -47,55 +55,6 @@ if sys.version_info >= (3, 11):
 else:  # pragma: no cover
     import tomli as tomllib
 
-AuthMode = Literal["api", "subscription"]
-
-HOST_TABLE_VERSION = "1"
-
-
-@dataclass(frozen=True)
-class HostEntry:
-    hosts: tuple[str, ...]
-    verified: bool
-    note: str = ""
-
-
-# Exact hostnames only (no wildcards) so the policy stays portable. Entries
-# marked unverified are starting points; confirm with `tdb env check --canary`
-# and a smoke run before relying on them.
-AGENT_HOSTS: Mapping[tuple[str, AuthMode], HostEntry] = {
-    ("claude-code", "api"): HostEntry(("api.anthropic.com",), verified=True),
-    ("claude-code", "subscription"): HostEntry(
-        ("api.anthropic.com",),
-        verified=False,
-        note="add any OAuth token refresh host observed in a smoke run",
-    ),
-    ("codex", "api"): HostEntry(("api.openai.com",), verified=True),
-    ("codex", "subscription"): HostEntry(
-        ("chatgpt.com", "auth.openai.com"),
-        verified=False,
-        note="auth.openai.com is the expected token refresh host; confirm by smoke test",
-    ),
-}
-
-UNSUPPORTED_AGENTS: Mapping[str, str] = {
-    "gemini-cli": (
-        "Harbor's Gemini CLI adapter writes ~/.gemini/settings.json itself and "
-        "accepts no native config, so server-side web tools cannot be disabled"
-    ),
-}
-
-DISABLED_TOOLS: Mapping[str, tuple[str, ...]] = {
-    "claude-code": ("WebSearch", "WebFetch"),
-    "codex": ("web_search",),
-}
-
-CLAUDE_CODE_ENV = {
-    "DISABLE_TELEMETRY": "1",
-    "DISABLE_ERROR_REPORTING": "1",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-}
-
-API_KEY_ENV = {"claude-code": "ANTHROPIC_API_KEY", "codex": "OPENAI_API_KEY"}
 JUDGE_KEY_ENV = "ANTHROPIC_API_KEY"
 
 
@@ -126,41 +85,6 @@ def parse_agent_pairs(
     ]
 
 
-def allowed_hosts(agent: str, auth: AuthMode) -> HostEntry:
-    if agent in UNSUPPORTED_AGENTS:
-        raise RunError(f"{agent} is not supported: {UNSUPPORTED_AGENTS[agent]}")
-    try:
-        return AGENT_HOSTS[(agent, auth)]
-    except KeyError as exc:
-        raise RunError(f"no network host table entry for agent {agent!r}") from exc
-
-
-def resolve_auth(agent: str, auth: AuthMode, env: Mapping[str, str]) -> dict[str, str]:
-    """Validate credentials and return the agent env flags for this mode."""
-    if auth == "api":
-        key = API_KEY_ENV[agent]
-        if not env.get(key):
-            raise RunError(f"--auth api for {agent} requires {key} in the environment")
-        return {}
-    if agent == "claude-code":
-        if not env.get("CLAUDE_CODE_OAUTH_TOKEN"):
-            raise RunError(
-                "--auth subscription for claude-code requires CLAUDE_CODE_OAUTH_TOKEN "
-                "(create one with `claude setup-token`)"
-            )
-        return {"CLAUDE_FORCE_OAUTH": "1"}
-    if agent == "codex":
-        explicit = env.get("CODEX_AUTH_JSON_PATH")
-        path = Path(explicit) if explicit else Path.home() / ".codex" / "auth.json"
-        if not path.is_file():
-            raise RunError(
-                f"--auth subscription for codex requires a ChatGPT auth.json at {path} "
-                "(run `codex login`) or CODEX_AUTH_JSON_PATH"
-            )
-        return {"CODEX_FORCE_AUTH_JSON": "1"}
-    raise RunError(f"unsupported agent {agent!r}")
-
-
 def agent_config(
     request: AgentRequest,
     *,
@@ -169,23 +93,28 @@ def agent_config(
     env: Mapping[str, str],
 ) -> tuple[dict[str, Any], AgentSpec]:
     """Harbor `AgentConfig` dict plus its provenance record."""
-    entry = allowed_hosts(request.agent, auth)
-    shipped = environment.agent_versions()[request.agent]
-    version = request.version or shipped
-    if version != shipped:
+    try:
+        profile = agents.get_profile(request.agent)
+        provider = agents.model_provider(profile, request.model)
+        hosts = agents.api_hosts(profile, auth, provider)
+        auth_env = agents.resolve_auth(profile, auth, provider, env)
+    except AgentError as exc:
+        raise RunError(str(exc)) from exc
+    version = request.version or profile.version
+    if version != profile.version:
+        if profile.preinstalled:
+            raise RunError(
+                f"{request.agent} version {version} requested but the image ships "
+                f"{profile.version}; rebuild the image instead of installing at "
+                "trial time"
+            )
         raise RunError(
-            f"{request.agent} version {version} requested but the image ships "
-            f"{shipped}; rebuild the image instead of installing at trial time"
+            f"{request.agent} version {version} requested but tdb pins "
+            f"{profile.version} (ImagePins.{profile.version_pin}); change the pin "
+            "and rebuild the image"
         )
-    agent_env = resolve_auth(request.agent, auth, env)
-    kwargs: dict[str, Any] = {"version": version}
-    if request.agent == "claude-code":
-        denied = list(DISABLED_TOOLS["claude-code"])
-        kwargs["disallowed_tools"] = ",".join(denied)
-        kwargs["config"] = {"permissions": {"deny": denied}}
-        agent_env = {**CLAUDE_CODE_ENV, **agent_env}
-    elif request.agent == "codex":
-        kwargs["web_search"] = "disabled"
+    kwargs: dict[str, Any] = {"version": version, **copy.deepcopy(dict(profile.kwargs))}
+    agent_env = {**profile.env, **auth_env}
     config: dict[str, Any] = {
         "name": request.agent,
         "model_name": request.model,
@@ -197,30 +126,50 @@ def agent_config(
         agent=request.agent,
         model=request.model,
         agent_version=version,
-        kwargs=kwargs,
+        kwargs=copy.deepcopy(kwargs),
         env_keys=tuple(sorted(agent_env)),
-        allowed_hosts=entry.hosts,
+        allowed_hosts=hosts,
+        setup_hosts=profile.setup_hosts,
     )
     return config, spec
 
 
-_MARKER_LINE = re.compile(
-    r"^allowed_hosts = \[[^\]\n]*\]  " + re.escape(AGENT_HOSTS_MARKER) + r"$",
-    re.MULTILINE,
-)
+def _marker_line(marker: str) -> re.Pattern[str]:
+    return re.compile(
+        r"^allowed_hosts = \[[^\]\n]*\]  " + re.escape(marker) + r"$", re.MULTILINE
+    )
 
 
-def fill_allowed_hosts(task_toml: str, hosts: Sequence[str]) -> str:
-    """Replace the agent allowlist placeholder written by `tdb build`."""
-    replacement = f"allowed_hosts = {json.dumps(list(hosts))}  {AGENT_HOSTS_MARKER}"
-    new, n = _MARKER_LINE.subn(replacement, task_toml)
-    if n != 1:
-        raise RunError(
-            f"expected exactly one `{AGENT_HOSTS_MARKER}` line in task.toml, found {n}"
-        )
+def fill_allowed_hosts(
+    task_toml: str, agent_hosts: Sequence[str], environment_hosts: Sequence[str]
+) -> str:
+    """Fill the two allowlist placeholders written by `tdb build`.
+
+    `agent_hosts` go to `[agent]` (during `agent.run()`), `environment_hosts`
+    to the `[environment]` baseline (during agent setup).
+    """
+    new = task_toml
+    for marker, hosts in (
+        (AGENT_HOSTS_MARKER, agent_hosts),
+        (ENVIRONMENT_HOSTS_MARKER, environment_hosts),
+    ):
+        replacement = f"allowed_hosts = {json.dumps(list(hosts))}  {marker}"
+        new, n = _marker_line(marker).subn(replacement, new)
+        if n != 1:
+            raise RunError(
+                f"expected exactly one `{marker}` line in task.toml, found {n}; "
+                "rebuild the tasks with this version of `tdb build`"
+            )
     parsed = tomllib.loads(new)
-    if parsed["environment"].get("allowed_hosts") != list(hosts):
-        raise RunError("allowed_hosts placeholder is not in the [environment] table")
+    agent = parsed.get("agent", {})
+    if agent.get("network_mode") != "allowlist" or agent.get("allowed_hosts") != list(
+        agent_hosts
+    ):
+        raise RunError("agent allowlist placeholder is not in the [agent] table")
+    if parsed.get("environment", {}).get("allowed_hosts") != list(environment_hosts):
+        raise RunError(
+            "environment allowlist placeholder is not in the [environment] table"
+        )
     return new
 
 
@@ -230,9 +179,13 @@ def task_dirs(tasks_dir: Path) -> list[Path]:
 
 
 def materialize_tasks(
-    tasks_dir: Path, dest: Path, hosts: Sequence[str], task_ids: Sequence[str] | None
+    tasks_dir: Path,
+    dest: Path,
+    agent_hosts: Sequence[str],
+    environment_hosts: Sequence[str],
+    task_ids: Sequence[str] | None,
 ) -> list[Path]:
-    """Copy tasks beside the job dir and fill the agent allowlist."""
+    """Copy tasks beside the job dir and fill both allowlists."""
     if dest.exists():
         shutil.rmtree(dest)
     dest.mkdir(parents=True)
@@ -248,7 +201,9 @@ def materialize_tasks(
         target = dest / name
         shutil.copytree(available[name], target)
         toml_path = target / "task.toml"
-        toml_path.write_text(fill_allowed_hosts(toml_path.read_text(), hosts))
+        toml_path.write_text(
+            fill_allowed_hosts(toml_path.read_text(), agent_hosts, environment_hosts)
+        )
         out.append(target)
     manifest = tasks_dir / BUILD_MANIFEST
     if manifest.is_file():
@@ -275,17 +230,19 @@ def check_image(image: str | None, requests: Sequence[AgentRequest]) -> list[str
             f"image {image} not found locally; build it with `tdb env build` or pull it"
         ]
     problems = []
-    prefix = environment.LABEL_PREFIX
-    keys = {"claude-code": "claude-code-version", "codex": "codex-version"}
     for req in requests:
-        want = req.version or environment.agent_versions()[req.agent]
-        have = labels.get(f"{prefix}.{keys[req.agent]}")
+        profile = agents.get_profile(req.agent)
+        want = req.version or profile.version
+        have = labels.get(profile.image_label)
         if have != want:
-            problems.append(f"image {image} ships {req.agent} {have}, requested {want}")
-    if labels.get(f"{prefix}.version") != package_version():
+            what = "ships" if profile.preinstalled else "was built for"
+            problems.append(
+                f"image {image} {what} {req.agent} {have}, requested {want}"
+            )
+    grader = labels.get(f"{environment.LABEL_PREFIX}.version")
+    if grader != package_version():
         problems.append(
-            f"image {image} has grader {labels.get(f'{prefix}.version')}, "
-            f"this package is {package_version()}"
+            f"image {image} has grader {grader}, this package is {package_version()}"
         )
     return problems
 
@@ -339,18 +296,23 @@ def plan_run(
         agent_cfg, spec = agent_config(req, auth=auth, skills=skills, env=env)
         configs.append(agent_cfg)
         specs.append(spec)
-    hosts = sorted({h for s in specs for h in s.allowed_hosts})
+    agent_hosts = sorted({h for s in specs for h in s.allowed_hosts})
+    environment_hosts = sorted(
+        {*agent_hosts, *(h for s in specs for h in s.setup_hosts)}
+    )
+    setup_hosts = sorted(set(environment_hosts) - set(agent_hosts))
     warnings = []
     for req in requests:
-        entry = allowed_hosts(req.agent, auth)
-        if not entry.verified:
+        verified, note = agents.hosts_verified(agents.get_profile(req.agent), auth)
+        if not verified:
             warnings.append(
-                f"host list for {req.agent} with --auth {auth} is unverified: {entry.note}"
+                f"host list for {req.agent} with --auth {auth} is unverified: {note}"
             )
-    if len({s.allowed_hosts for s in specs}) > 1:
+    if len({(s.allowed_hosts, s.setup_hosts) for s in specs}) > 1:
         warnings.append(
-            "matrix agents need different API hosts; every trial gets the union "
-            f"{hosts}. Run one job per agent for per-agent allowlists."
+            "matrix agents need different hosts; every trial gets the union "
+            f"(agent phase {agent_hosts}, setup {setup_hosts}). Run one job per "
+            "agent for per-agent allowlists."
         )
     image = build.get("image")
     if not dry_run:
@@ -364,12 +326,20 @@ def plan_run(
     if (job_dir / "config.json").exists():
         raise RunError(f"{job_dir} already holds a Harbor job; pick another --job-name")
     tasks_copy = jobs_dir / f"{name}.tasks"
-    task_paths = materialize_tasks(tasks_dir, tasks_copy, hosts, task_ids)
+    task_paths = materialize_tasks(
+        tasks_dir, tasks_copy, agent_hosts, environment_hosts, task_ids
+    )
     if canary:
         if image is None:
             raise RunError("--canary needs tasks built with a prebuilt --image")
         task_paths.insert(
-            0, write_canary_task(tasks_copy, image=image, allowed_hosts=hosts)
+            0,
+            write_canary_task(
+                tasks_copy,
+                image=image,
+                agent_hosts=agent_hosts,
+                setup_hosts=setup_hosts,
+            ),
         )
 
     config: dict[str, Any] = {
@@ -405,10 +375,14 @@ def plan_run(
         network_policy=NetworkPolicy(
             host_table_version=HOST_TABLE_VERSION,
             agent_network_mode="allowlist",
-            agent_allowed_hosts=tuple(hosts),
+            agent_allowed_hosts=tuple(agent_hosts),
+            environment_network_mode="allowlist",
+            environment_allowed_hosts=tuple(environment_hosts),
             verifier_network_mode="allowlist",
             verifier_allowed_hosts=(JUDGE_API_HOST,),
-            disabled_tools={s.agent: DISABLED_TOOLS[s.agent] for s in specs},
+            disabled_tools={
+                s.agent: agents.get_profile(s.agent).disabled_tools for s in specs
+            },
             canary=canary,
         ),
         repo_git_sha=git_sha(Path(__file__).parent),

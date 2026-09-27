@@ -2,7 +2,8 @@
 
 The pins below are the single source of truth: `tdb env build` passes them to
 the Dockerfile as build arguments and records them as image labels, and
-`tdb run` refuses agent versions that differ from what the image ships.
+`tdb run` refuses agent versions that differ from these pins. Which agents
+use which pin is recorded in `trialdesignbench.agents`.
 """
 
 from __future__ import annotations
@@ -63,11 +64,6 @@ CONTEXT_FILES = (
 
 def default_image() -> str:
     return f"trialdesignbench-env:{package_version()}"
-
-
-def agent_versions() -> dict[str, str]:
-    """Agent CLI versions baked into the image, keyed by Harbor agent name."""
-    return {"claude-code": PINS.claude_code_version, "codex": PINS.codex_version}
 
 
 def dockerfile_text() -> str:

@@ -308,14 +308,30 @@ class AgentSpec(_Model):
     env_keys: tuple[str, ...] = Field(
         default=(), description="Names (never values) of agent env vars set."
     )
-    allowed_hosts: tuple[str, ...]
+    allowed_hosts: tuple[str, ...] = Field(
+        description="Model API hosts reachable during `agent.run()`."
+    )
+    setup_hosts: tuple[str, ...] = Field(
+        default=(),
+        description="Extra hosts Harbor's install step reaches during agent "
+        "setup (empty when the CLI is preinstalled in the image).",
+    )
 
 
 class NetworkPolicy(_Model):
     schema_version: str = SCHEMA_VERSION
     host_table_version: str
     agent_network_mode: str
-    agent_allowed_hosts: tuple[str, ...]
+    agent_allowed_hosts: tuple[str, ...] = Field(
+        description="Task `[agent]` allowlist, applied during `agent.run()`."
+    )
+    environment_network_mode: str = "allowlist"
+    environment_allowed_hosts: tuple[str, ...] = Field(
+        default=(),
+        description="Task `[environment]` baseline, applied during agent setup: "
+        "the agent hosts plus any setup hosts. Empty in manifests written before "
+        "tdb recorded it (the baseline then equalled `agent_allowed_hosts`).",
+    )
     verifier_network_mode: str
     verifier_allowed_hosts: tuple[str, ...]
     disabled_tools: dict[str, tuple[str, ...]]
