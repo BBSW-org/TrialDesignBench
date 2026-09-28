@@ -227,7 +227,7 @@ harbor run \
 	--path probe-claude \
 	--env docker \
 	--agent claude-code \
-	--model anthropic/claude-sonnet-5 \
+	--model anthropic/claude-sonnet-5-5 \
 	--jobs-dir jobs \
 	-y
 python3 - <<'PY'
