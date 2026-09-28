@@ -12,7 +12,7 @@ One shared, pinned Docker image serves both the agent and the verifier.
 | Python | 3.12 (Ubuntu noble) with `uv` 0.12.19 |
 | Node | 24.21.0 LTS |
 | Agent CLIs | Claude Code 2.1.284, Codex CLI 0.158.0 (preinstalled) |
-| Agent settings | `/etc/grok/requirements.toml` for Grok Build 1.0.40; OpenCode 1.18.33 plugin package and model catalog (both CLIs are installed by Harbor at setup) |
+| Agent settings | `/etc/grok/requirements.toml` for Grok Build 1.0.41; OpenCode 1.18.33 plugin package and model catalog (both CLIs are installed by Harbor at setup) |
 | Skills | `RConsortium/pharma-skills` at a pinned commit, in `/skills/<name>/SKILL.md` |
 | Grader | `trialdesignbench[judge]` at the package version, in `/opt/tdb/venv` |
 

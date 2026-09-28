@@ -1,5 +1,11 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Maintenance
+
+- Bump the pinned Grok Build to 1.0.41 (was 1.0.40) (#102).
+
 ## trialdesignbench 1.2.2
 
 ### Improvements
