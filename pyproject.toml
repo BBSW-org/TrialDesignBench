@@ -59,7 +59,7 @@ skip = [".venv", "vendor", "deps-src", "tmp"]
 profile = "black"
 
 [tool.mypy]
-exclude = ["vendor/", "deps-src/", "tmp/"]
+exclude = ["vendor/", "deps-src/", "tmp/", "site/"]
 plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
