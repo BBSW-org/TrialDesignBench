@@ -29,6 +29,11 @@
     --md-code-font: "Ergonomic Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
+/* Keep the root font size consistent across viewport widths. */
+html {
+    font-size: 125%;
+}
+
 body {
     -webkit-font-smoothing: auto;
 }
