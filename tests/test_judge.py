@@ -47,7 +47,7 @@ def test_judge_info_records_prompt_hash() -> None:
     assert info.prompt_sha256 == judge_prompt_sha256()
     assert info.model == "claude-haiku-4-5" and info.votes == 3
     assert info.temperature == 0.0
-    assert AnthropicJudge("claude-opus-5").info().temperature is None
+    assert AnthropicJudge("claude-opus-5-5").info().temperature is None
     assert not supports_temperature("claude-sonnet-5")
 
 

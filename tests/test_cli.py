@@ -112,7 +112,7 @@ def test_run_dry_run(tmp_path: Path, dataset_dir: Path, monkeypatch) -> None:  #
             "--agent",
             "claude-code",
             "--model",
-            "anthropic/claude-opus-5",
+            "anthropic/claude-opus-5-5",
             "--dry-run",
             "--jobs-dir",
             str(tmp_path / "jobs"),
@@ -155,8 +155,8 @@ def test_run_effort_option(tmp_path: Path, dataset_dir: Path, monkeypatch) -> No
     )
     common = ["run", "--tasks", str(tasks), "--dry-run", "--jobs-dir"]
     common += [str(tmp_path / "jobs")]
-    matrix = ["--agent", "claude-code", "--model", "anthropic/claude-opus-5"]
-    matrix += ["--agent", "codex", "--model", "openai/gpt-5.5"]
+    matrix = ["--agent", "claude-code", "--model", "anthropic/claude-opus-5-5"]
+    matrix += ["--agent", "codex", "--model", "openai/gpt-6-astra"]
     r = runner.invoke(
         app,
         [*common, "--job-name", "e1", *matrix, "--effort", "max", "--effort", "xhigh"],

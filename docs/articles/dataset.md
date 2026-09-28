@@ -6,8 +6,11 @@ canonical, versioned dataset that every later stage reads.
 ## Import
 
 ```bash
-uv run tdb dataset import data/json/*.json --out tmp/dataset \
-  --documents path/to/documents --dataset-version 1.0.0
+uv run tdb dataset import \
+	data/json/*.json \
+	--out tmp/dataset \
+	--documents path/to/documents \
+	--dataset-version 1.0.0
 ```
 
 - **One task per trial.** The task id is a filesystem- and registry-safe slug
@@ -59,8 +62,11 @@ question has no `Add` criteria.
 ## Attach a document later
 
 ```bash
-uv run tdb dataset attach-document tmp/dataset 10-1200-jco-24-01818 sap.md \
-  --source "Mathpix conversion of the JCO protocol supplement"
+uv run tdb dataset attach-document \
+	tmp/dataset \
+	10-1200-jco-24-01818 \
+	sap.md \
+	--source "Mathpix conversion of the JCO protocol supplement"
 ```
 
 This writes `document.md`, updates `task.json`, and refreshes every digest.

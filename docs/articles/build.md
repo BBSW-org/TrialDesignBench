@@ -2,8 +2,12 @@
 
 `tdb build` turns canonical dataset tasks into Harbor task directories.
 
-```bash
-uv run tdb build tmp/dataset --out tmp/tasks [--image REF] [--task-ids ID ...]
+```text
+uv run tdb build \
+  tmp/dataset \
+  --out tmp/tasks \
+  [--image REF] \
+  [--task-ids ID ...]
 ```
 
 ## Task layout

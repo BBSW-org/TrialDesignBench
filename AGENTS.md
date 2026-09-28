@@ -118,6 +118,11 @@ uv run zensical build
 *Note: Tools must skip `.venv`, `vendor`, and `deps-src` (configured in `pyproject.toml`).*
 
 ## Documentation Structure
+- **Shell examples:** Keep multi-argument calls on multiple lines with `\`
+  continuations, one positional argument or option/value pair per indented line.
+  Keep the command and subcommands together on the first line.
+  Check Bash blocks with `shfmt -ln bash` using its default tab indentation.
+  Use `text` fences for CLI usage synopses with optional-argument notation.
 - **Public Docs:** Managed with Zensical in `docs/`.
 - **Vignettes:** Update `docs/articles/` for usage guides.
 - **Reference:** Update `docs/reference/` and `zensical.toml` for API changes.

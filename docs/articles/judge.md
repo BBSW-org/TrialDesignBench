@@ -12,7 +12,7 @@ are scored.
 | Setting | Default | Inside Harbor (`tdb run`, `tdb regrade`) | Standalone (`tdb grade`) |
 | --- | --- | --- | --- |
 | Judge | `anthropic` (`AnthropicJudge`) | always `anthropic` | `--judge anthropic\|fake` |
-| Model | `claude-opus-5` | fixed per task at build time: `tdb build --judge-model ID` writes `TDB_JUDGE_MODEL` into `[verifier.env]` | `--judge-model ID`, else `TDB_JUDGE_MODEL`, else the default |
+| Model | `claude-opus-5-5` | fixed per task at build time: `tdb build --judge-model ID` writes `TDB_JUDGE_MODEL` into `[verifier.env]` | `--judge-model ID`, else `TDB_JUDGE_MODEL`, else the default |
 | Votes | 1 | 1 | `--judge-votes K` (majority of K calls; ties are `unclear`) |
 
 The judge model is recorded in `tdb-build.json`, `tdb-run.json`, and every
@@ -44,9 +44,13 @@ The judge needs `ANTHROPIC_API_KEY`, an Anthropic API key from the
 
 ```bash
 export ANTHROPIC_API_KEY=...
-uv run tdb grade path/to/submission --rubrics tmp/dataset/<task_id>/rubrics.json \
-  --out graded/<task_id> --trajectory path/to/trajectory.json \
-  --judge-model claude-opus-5 --judge-votes 3
+uv run tdb grade \
+	path/to/submission \
+	--rubrics "tmp/dataset/<task_id>/rubrics.json" \
+	--out "graded/<task_id>" \
+	--trajectory path/to/trajectory.json \
+	--judge-model claude-opus-5-5 \
+	--judge-votes 3
 ```
 
 When the agent is `claude-code` (or `opencode` with an `anthropic/` model)

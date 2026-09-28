@@ -1,8 +1,14 @@
 # Grade
 
-```bash
-uv run tdb grade <submission_dir> --rubrics rubrics.json --out <dir> \
-  [--trajectory trajectory.json] [--judge anthropic|fake] [--judge-model ID] [--judge-votes K]
+```text
+uv run tdb grade \
+  <submission_dir> \
+  --rubrics rubrics.json \
+  --out <dir> \
+  [--trajectory trajectory.json] \
+  [--judge anthropic|fake] \
+  [--judge-model ID] \
+  [--judge-votes K]
 ```
 
 The grader is a pure function of the submission artifacts, the rubrics, and
@@ -59,7 +65,7 @@ rubrics. Each criterion gets `pass`, `fail`, or `unclear` with a rationale and
 a quoted evidence excerpt.
 
 The default `AnthropicJudge` uses the Anthropic Messages API with structured
-JSON output (`output_config.format`), model `claude-opus-5` unless
+JSON output (`output_config.format`), model `claude-opus-5-5` unless
 `--judge-model` or `TDB_JUDGE_MODEL` says otherwise. Model choice,
 credentials (`ANTHROPIC_API_KEY`), and network access are covered in
 [Judge](judge.md). `temperature=0` is sent

@@ -1,8 +1,13 @@
 # Report
 
-```bash
-uv run tdb report jobs/<job> [more dirs...] [--out report.json] [--format table|json|md] \
-  [--threshold 0.8] [--task-ids ...]
+```text
+uv run tdb report \
+  jobs/<job> \
+  [more dirs...] \
+  [--out report.json] \
+  [--format table|json|md] \
+  [--threshold 0.8] \
+  [--task-ids ...]
 ```
 
 ## Inputs

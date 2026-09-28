@@ -16,7 +16,12 @@
 
 ```bash
 # 1. Python deps
-pip install -U "huggingface_hub[cli]" pandas pyarrow openpyxl
+pip install \
+	-U \
+	"huggingface_hub[cli]" \
+	pandas \
+	pyarrow \
+	openpyxl
 # pandas + pyarrow are required for the Parquet read/write.
 # openpyxl is only needed if the source file is an uploaded .xlsx
 # (htmlview URL) rather than a native Google Sheet.
@@ -36,13 +41,18 @@ omitted, it defaults to the directory containing the script.
 
 ```bash
 # Preview new rows without changing anything
-python3 sync_dataset.py --data-dir /path/to/source --dry-run
+python3 sync_dataset.py \
+	--data-dir /path/to/source \
+	--dry-run
 
 # Download new PDFs and update tdr.parquet locally, but don't upload
-python3 sync_dataset.py --data-dir /path/to/source --no-upload
+python3 sync_dataset.py \
+	--data-dir /path/to/source \
+	--no-upload
 
 # Full sync: fetch sheet, download new PDFs, upload to Hugging Face
-python3 sync_dataset.py --data-dir /path/to/source
+python3 sync_dataset.py \
+	--data-dir /path/to/source
 ```
 
 If you keep the script next to your data dir, you can drop `--data-dir`.
