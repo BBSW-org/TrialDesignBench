@@ -38,7 +38,7 @@ body {
 /* Navigation */
 
 .md-nav {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .md-nav__item--section>.md-nav__link {
@@ -56,12 +56,12 @@ body {
 /* Content */
 
 .md-typeset {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     letter-spacing: normal;
 }
 
 .md-path {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .md-typeset h1,
@@ -77,12 +77,12 @@ h4 code {
 }
 
 .md-typeset h1 {
-    font-size: 2.4rem;
+    font-size: 1.7rem;
 }
 
 .md-typeset .admonition,
 .md-typeset details {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .md-typeset code {
