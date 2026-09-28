@@ -16,9 +16,9 @@ refuses any other agent.
 | Agent | Harness | Pinned version | Installed | `--model` providers | `--auth` |
 | --- | --- | --- | --- | --- | --- |
 | `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.283 | in the image | `anthropic` | `api`, `subscription` |
-| `codex` | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) | 0.157.1 | in the image | `openai` | `api`, `subscription` |
+| `codex` | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) | 0.158.0 | in the image | `openai` | `api`, `subscription` |
 | `grok-build` | [Grok Build](https://docs.x.ai/build/overview) | 1.0.40 | by Harbor at setup | `xai` | `api` |
-| `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.18.32 | by Harbor at setup | `anthropic`, `openai`, `xai` | `api` |
+| `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.18.33 | by Harbor at setup | `anthropic`, `openai`, `xai` | `api` |
 
 - `--model` is always `<provider>/<model>`, for example
   `anthropic/claude-opus-5-5`, `openai/gpt-6-astra`, or `xai/grok-4.7`.
