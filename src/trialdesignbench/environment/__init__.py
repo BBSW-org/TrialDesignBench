@@ -27,7 +27,7 @@ class ImagePins:
     node_version: str = "24.21.0"
     uv_version: str = "0.12.19"
     # Agent CLIs (Harbor agent versions).
-    claude_code_version: str = "2.1.283"
+    claude_code_version: str = "2.1.284"
     codex_version: str = "0.158.0"
     grok_build_version: str = "1.0.40"
     opencode_version: str = "1.18.33"
