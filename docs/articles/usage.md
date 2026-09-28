@@ -61,7 +61,7 @@ export ANTHROPIC_API_KEY=... # the agent's model API key and the judge's key
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent claude-code \
-	--model anthropic/claude-opus-5 \
+	--model anthropic/claude-opus-5-5 \
 	--effort high \
 	--n-attempts 3 \
 	--canary

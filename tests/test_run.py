@@ -73,7 +73,7 @@ def test_dry_run_job_yaml(tasks_dir: Path, tmp_path: Path) -> None:
     p = plan(
         tasks_dir,
         tmp_path,
-        [AgentRequest("claude-code", "anthropic/claude-opus-5")],
+        [AgentRequest("claude-code", "anthropic/claude-opus-5-5")],
         n_attempts=3,
         n_concurrent=2,
     )
@@ -85,7 +85,7 @@ def test_dry_run_job_yaml(tasks_dir: Path, tmp_path: Path) -> None:
     assert job["environment"] == {"type": "docker"}
     (agent,) = job["agents"]
     assert agent["name"] == "claude-code"
-    assert agent["model_name"] == "anthropic/claude-opus-5"
+    assert agent["model_name"] == "anthropic/claude-opus-5-5"
     kwargs = agent["kwargs"]
     assert kwargs["version"] == environment.PINS.claude_code_version
     assert kwargs["disallowed_tools"] == "WebSearch,WebFetch"
@@ -127,7 +127,7 @@ def test_dry_run_job_yaml(tasks_dir: Path, tmp_path: Path) -> None:
 
 
 def test_codex_web_search_disabled(tasks_dir: Path, tmp_path: Path) -> None:
-    p = plan(tasks_dir, tmp_path, [AgentRequest("codex", "openai/gpt-5.5")])
+    p = plan(tasks_dir, tmp_path, [AgentRequest("codex", "openai/gpt-6-astra")])
     agent = load_job(p)["agents"][0]
     assert agent["kwargs"] == {
         "version": environment.PINS.codex_version,
@@ -162,8 +162,8 @@ def test_grok_build_two_phase_policy(tasks_dir: Path, tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("model", "host", "key"),
     [
-        ("anthropic/claude-opus-5", "api.anthropic.com", "ANTHROPIC_API_KEY"),
-        ("openai/gpt-5.5", "api.openai.com", "OPENAI_API_KEY"),
+        ("anthropic/claude-opus-5-5", "api.anthropic.com", "ANTHROPIC_API_KEY"),
+        ("openai/gpt-6-astra", "api.openai.com", "OPENAI_API_KEY"),
         ("xai/grok-4.7", "api.x.ai", "XAI_API_KEY"),
     ],
 )
@@ -238,7 +238,7 @@ def test_effort_matrix_on_one_agent(tasks_dir: Path, tmp_path: Path) -> None:
     """The same agent and model at several levels is a valid matrix."""
     requests = parse_agent_pairs(
         ["codex", "codex", "codex"],
-        ["openai/gpt-5.5"] * 3,
+        ["openai/gpt-6-astra"] * 3,
         efforts=["medium", "xhigh", "default"],
     )
     p = plan(tasks_dir, tmp_path, requests)
@@ -369,8 +369,8 @@ def test_unlisted_agent_refused(tasks_dir: Path, tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("agent", "model", "match"),
     [
-        ("claude-code", "openai/gpt-5.5", "cannot use 'openai' models"),
-        ("codex", "gpt-5.5", "must be <provider>/<model>"),
+        ("claude-code", "openai/gpt-6-astra", "cannot use 'openai' models"),
+        ("codex", "gpt-6-astra", "must be <provider>/<model>"),
         ("opencode", "google/gemini-3.8-flash", "cannot use 'google' models"),
     ],
 )

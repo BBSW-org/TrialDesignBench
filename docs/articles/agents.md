@@ -21,9 +21,9 @@ refuses any other agent.
 | `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.18.32 | by Harbor at setup | `anthropic`, `openai`, `xai` | `api` |
 
 - `--model` is always `<provider>/<model>`, for example
-  `anthropic/claude-opus-5`, `openai/gpt-5.5`, or `xai/grok-4.7`. The provider
-  decides which API key is required and which API host is allowlisted, so a
-  model from any other provider is refused.
+  `anthropic/claude-opus-5-5`, `openai/gpt-6-astra`, or `xai/grok-4.7`.
+  The provider decides which API key is required and which API host is
+  allowlisted, so a model from any other provider is refused.
 - The pinned version is passed to Harbor as the agent `version`;
   `--agent-version` may only repeat it. Pins live in
   `trialdesignbench.environment.PINS` and are recorded as image labels.
@@ -38,12 +38,12 @@ Run one agent, or a matrix by repeating the pair:
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent opencode \
-	--model anthropic/claude-opus-5
+	--model anthropic/claude-opus-5-5
 
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent claude-code \
-	--model anthropic/claude-opus-5 \
+	--model anthropic/claude-opus-5-5 \
 	--agent grok-build \
 	--model xai/grok-4.7
 ```
@@ -83,7 +83,7 @@ lacks differs by agent:
   off on `grok-4.x`.
 - `opencode`: variant names are the model's `reasoning_options` effort values
   in the catalog the image ships at `/opt/tdb/opencode-models.json` (for
-  example `claude-opus-5`: `low` to `max`; `gpt-5.5`: `none`, `low`,
+  example `claude-opus-5-5`: `low` to `max`; `gpt-6-astra`: `none`, `low`,
   `medium`, `high`, `xhigh`; `grok-4.7`: `low` to `xhigh`). OpenCode silently
   ignores a variant the model does not define, so check the catalog before a
   large run.
@@ -104,16 +104,16 @@ agent and model may appear at several levels in one job:
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent codex \
-	--model openai/gpt-5.5 \
+	--model openai/gpt-6-astra \
 	--effort xhigh
 
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent claude-code \
-	--model anthropic/claude-opus-5 \
+	--model anthropic/claude-opus-5-5 \
 	--effort medium \
 	--agent claude-code \
-	--model anthropic/claude-opus-5 \
+	--model anthropic/claude-opus-5-5 \
 	--effort max \
 	--agent grok-build \
 	--model xai/grok-4.7 \
@@ -153,7 +153,7 @@ export XAI_API_KEY=...       # grok-build, or opencode with xai/ models
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent codex \
-	--model openai/gpt-5.5
+	--model openai/gpt-6-astra
 ```
 
 With `claude-code`, or `opencode` with an `anthropic/` model, the same
@@ -180,7 +180,7 @@ export ANTHROPIC_API_KEY=... # still required by the judge
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent claude-code \
-	--model anthropic/claude-opus-5 \
+	--model anthropic/claude-opus-5-5 \
 	--auth subscription
 ```
 
@@ -194,7 +194,7 @@ export ANTHROPIC_API_KEY=... # required by the judge
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent codex \
-	--model openai/gpt-5.5 \
+	--model openai/gpt-6-astra \
 	--auth subscription
 ```
 

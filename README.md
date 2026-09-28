@@ -93,7 +93,7 @@ export ANTHROPIC_API_KEY=...
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent claude-code \
-	--model anthropic/claude-opus-5 \
+	--model anthropic/claude-opus-5-5 \
 	--effort high \
 	--n-attempts 3 \
 	--canary
