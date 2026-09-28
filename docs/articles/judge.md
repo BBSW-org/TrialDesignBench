@@ -20,10 +20,13 @@ The judge model is recorded in `tdb-build.json`, `tdb-run.json`, and every
 grade with a different model inside Harbor, rebuild the tasks with
 `--judge-model` and use `tdb regrade`; no agent is re-run.
 
-`AnthropicJudge` uses the Anthropic Messages API with structured JSON output,
-sends `temperature=0` to models that accept sampling parameters, and retries
-transient errors with backoff. A question whose judge call still fails marks
-all its criteria `error`, which zeroes the trial's reward.
+`AnthropicJudge` uses the Anthropic Messages API with structured JSON output
+and retries transient errors with backoff. It omits `temperature` for the
+`claude-fable`, `claude-mythos`, `claude-opus`, and `claude-sonnet` families
+for forward compatibility, including older versions that still accept it.
+These models use the API's default sampling behavior; other models receive
+`temperature=0`. A question whose judge call still fails marks all its
+criteria `error`, which zeroes the trial's reward.
 
 ## Authentication
 

@@ -66,10 +66,9 @@ a quoted evidence excerpt.
 
 The default `AnthropicJudge` uses the Anthropic Messages API with structured
 JSON output (`output_config.format`), model `claude-opus-5-5` unless
-`--judge-model` or `TDB_JUDGE_MODEL` says otherwise. Model choice,
+`--judge-model` or `TDB_JUDGE_MODEL` says otherwise. Model choice, sampling settings,
 credentials (`ANTHROPIC_API_KEY`), and network access are covered in
-[Judge](judge.md). `temperature=0` is sent
-to models that accept sampling parameters. Transient errors (rate limits,
+[Judge](judge.md). Transient errors (rate limits,
 5xx, truncated or malformed responses) are retried with backoff. After the
 retries, every criterion of that question is marked `error`. `--judge-votes K`
 repeats the call K times and takes the majority; ties are `unclear` and any
