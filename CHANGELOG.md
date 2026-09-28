@@ -9,7 +9,8 @@
   model versions need no prefix updates. Older models in these families
   also use API defaults instead of `temperature=0` (#93).
 - Bump the pinned Codex CLI to 0.158.0 (was 0.157.1) and OpenCode to
-  1.18.33 (was 1.18.32) (#96).
+  1.18.33 (was 1.18.32) (#96). Bump the pinned Claude Code to 2.1.284
+  (was 2.1.283) (#99).
 
 ## trialdesignbench 1.2.1
 
