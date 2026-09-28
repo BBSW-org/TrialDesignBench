@@ -16,9 +16,17 @@
     font-style: italic;
 }
 
+@font-face {
+    font-display: swap;
+    font-family: "Ergonomic Mono";
+    src: url("../assets/ErgonomicMono-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+}
+
 :root {
     --md-text-font: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    --md-code-font: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --md-code-font: "Ergonomic Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 body {
