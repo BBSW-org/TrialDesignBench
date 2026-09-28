@@ -7,8 +7,7 @@ The policy itself is described in [Environment](environment.md#network-policy-cl
 and the per-agent settings in [Agents](agents.md#closed-book-settings).
 
 The findings come from reading Harbor 0.23.0's source and from live probe
-runs on 2026-09-27 with Claude Code 2.1.283, Codex CLI 0.157.1, and the
-Antigravity SDK 0.1.9 (the version Harbor's runner pins). Rerun the
+runs on 2026-09-27 with the latest agent versions at the time. Rerun the
 [probe](#probing-an-agent) before relying on them for a newer agent version.
 
 ## Summary
@@ -227,7 +226,7 @@ harbor run \
 	--path probe-claude \
 	--env docker \
 	--agent claude-code \
-	--model anthropic/claude-sonnet-5 \
+	--model anthropic/claude-sonnet-5-5 \
 	--jobs-dir jobs \
 	-y
 python3 - <<'PY'

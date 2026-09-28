@@ -66,7 +66,7 @@ def test_effort_kwargs(profile: agents.AgentProfile) -> None:
 def test_effort_levels_match_harbor_and_the_clis() -> None:
     """Levels verified against Harbor 0.23.0 schemas and the pinned CLIs.
 
-    `claude --effort` (2.1.283) lists low..max and drops anything else with
+    `claude --effort` lists low..max and drops anything else with
     a warning; the OpenAI API enumerates none..max for `reasoning.effort`;
     grok 1.0.40 documents none..max as canonical levels; OpenCode variants
     are the catalog's `reasoning_options` effort values.
