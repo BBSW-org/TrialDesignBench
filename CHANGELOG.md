@@ -1,35 +1,43 @@
 # Changelog
 
-## trialdesignbench (development version)
+## trialdesignbench 1.2.0
 
 ### New features
 
 - `tdb run --effort <level>` sets the model's reasoning effort as a
-  first-class setting next to `--agent` and `--model`. The level is checked
-  against what each agent accepts before launch (Claude Code and OpenCode
-  silently ignore levels they do not know), mapped to the agent's Harbor
-  kwarg (`reasoning_effort`; `variant` for `opencode`), recorded in
-  `tdb-run.json` (`agents[].effort`), and read back by `tdb report`, which
-  now groups results by agent × model × effort and shows the level in the
-  leaderboard. `--effort` is given once for all agents or once per `--agent`
-  (`default` keeps the harness default), and the same agent and model may
-  run at several levels in one job. Without `--effort`, `tdb run` warns that
-  the harness default depends on the model and CLI version. The new
-  `trialdesignbench.agents.Effort` record documents each agent's kwarg and
-  levels; the Agents article lists them with each CLI's behavior.
+  first-class setting next to `--agent` and `--model` (#84).
+
+    The level is checked against what each agent accepts before launch
+    (Claude Code and OpenCode silently ignore levels they do not know),
+    mapped to the agent's Harbor kwarg (`reasoning_effort`; `variant`
+    for `opencode`), recorded in `tdb-run.json` (`agents[].effort`),
+    and read back by `tdb report`, which now groups results by
+    agent × model × effort and shows the level in the leaderboard.
+
+    `--effort` is given once for all agents or once per `--agent`
+    (`default` keeps the harness default), and the same agent and model
+    may run at several levels in one job.
+
+    Without `--effort`, `tdb run` warns that the harness default depends on
+    the model and CLI version. The new `trialdesignbench.agents.Effort` record
+    documents each agent's kwarg and levels; the Agents article lists them
+    with each CLI's behavior.
 
 ### Maintenance
 
-- Update the Docker image bundled dependency versions: R 4.6.1, uv 0.12.19, Node 24.21.0 (#82).
+- Update the Docker image bundled dependency versions:
+  R 4.6.1, uv 0.12.19, Node 24.21.0 (#82).
 
 ### Documentation
 
-- Add a new article about closed book runs: how Harbor's egress control works
-  and what it cannot stop, probe results showing which agent web tools run on
-  the provider's servers and which the allowlist already blocks,
-  provider-side controls, alternatives considered, what relaxing the
-  prevented or refused policy would require, and a reusable probe task.
-  The Environment, Agents, Grade, Run, and Usage articles now all link to it.
+- Add a new article about closed book runs (#83).
+
+    It documents how Harbor's egress control works and what it cannot stop,
+    probe results showing which agent web tools run on the provider's servers
+    and which the allowlist already blocks, provider-side controls,
+    alternatives considered, what relaxing the prevented or refused policy
+    would require, and a reusable probe task. The Environment, Agents, Grade,
+    Run, and Usage articles now all link to it.
 
 ## trialdesignbench 1.1.0
 
