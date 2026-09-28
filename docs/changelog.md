@@ -1,5 +1,12 @@
 # Changelog
 
+## trialdesignbench 1.2.1
+
+### Documentation
+
+- Format shell examples and update model references (#89).
+- Redesign logo and favicon as a generated hex sticker (#90).
+
 ## trialdesignbench 1.2.0
 
 ### New features
