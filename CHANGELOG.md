@@ -1,5 +1,14 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Improvements
+
+- Omit judge sampling parameters for the generic `claude-fable`,
+  `claude-mythos`, `claude-opus`, and `claude-sonnet` families so newer
+  model versions need no prefix updates. Older models in these families
+  also use API defaults instead of `temperature=0` (#93).
+
 ## trialdesignbench 1.2.1
 
 ### Documentation

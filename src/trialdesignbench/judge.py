@@ -33,15 +33,13 @@ from trialdesignbench.scoring import majority_verdict
 DEFAULT_JUDGE_MODEL = "claude-opus-5-5"
 JUDGE_MODEL_ENV = "TDB_JUDGE_MODEL"
 
-# Models that reject sampling parameters such as `temperature`.
+# Omit sampling parameters for these model families for forward compatibility,
+# including older versions that still accept them.
 _NO_SAMPLING_PREFIXES = (
     "claude-fable",
     "claude-mythos",
-    "claude-opus-5-5",
-    "claude-opus-5",
-    "claude-opus-4-7",
-    "claude-opus-4-8",
-    "claude-sonnet-5",
+    "claude-opus",
+    "claude-sonnet",
 )
 
 JUDGE_SYSTEM_PROMPT = """\
@@ -294,7 +292,7 @@ def _sdk_version() -> str | None:
 
 
 def supports_temperature(model: str) -> bool:
-    """Whether the model accepts sampling parameters."""
+    """Whether the judge should send an explicit temperature for this model."""
     return not model.startswith(_NO_SAMPLING_PREFIXES)
 
 

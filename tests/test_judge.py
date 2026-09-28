@@ -41,14 +41,36 @@ def test_extraction_message_omits_r_code(rubrics: RubricSet) -> None:
     assert "SECRET" not in msg
 
 
-def test_judge_info_records_prompt_hash() -> None:
-    judge = AnthropicJudge("claude-haiku-4-5", votes=3)
+@pytest.mark.parametrize(
+    ("model", "temperature"),
+    [
+        ("claude-fable-5-1", None),
+        ("claude-mythos-5-1", None),
+        ("claude-opus-4-6", None),
+        ("claude-opus-5-5", None),
+        ("claude-opus-future", None),
+        ("claude-sonnet-4-6", None),
+        ("claude-sonnet-5", None),
+        ("claude-sonnet-future", None),
+        ("claude-haiku-4-5", 0.0),
+    ],
+)
+def test_judge_info_matches_request(
+    rubrics: RubricSet, model: str, temperature: float | None
+) -> None:
+    judge = AnthropicJudge(model, votes=3)
     info = judge.info()
     assert info.prompt_sha256 == judge_prompt_sha256()
-    assert info.model == "claude-haiku-4-5" and info.votes == 3
-    assert info.temperature == 0.0
-    assert AnthropicJudge("claude-opus-5-5").info().temperature is None
-    assert not supports_temperature("claude-sonnet-5")
+    assert info.model == model and info.votes == 3
+    assert info.temperature == temperature
+    assert supports_temperature(model) is (temperature is not None)
+
+    q = rubrics.questions[0]
+    request = judge._request(q.question, q.criteria(), JudgeArtifacts({}, None))
+    if temperature is None:
+        assert "temperature" not in request
+    else:
+        assert request["temperature"] == temperature
 
 
 def test_fake_judge_rule(rubrics: RubricSet) -> None:
