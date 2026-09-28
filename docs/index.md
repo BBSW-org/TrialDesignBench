@@ -57,9 +57,9 @@ per agent before launch, recorded with every job, and kept apart in reports.
 ## Installation
 
 ```bash
-uv add trialdesignbench              # dataset, build, grade, report
-uv add "trialdesignbench[judge]"     # + Anthropic SDK for the rubric judge
-uv add "trialdesignbench[harbor]"    # + Harbor to run agents (Python 3.12+)
+uv add trialdesignbench           # dataset, build, grade, report
+uv add "trialdesignbench[judge]"  # + Anthropic SDK for the rubric judge
+uv add "trialdesignbench[harbor]" # + Harbor to run agents (Python 3.12+)
 ```
 
 For development:
@@ -74,24 +74,39 @@ uv sync --dev
 
 ```bash
 # Canonical dataset from curated submissions and protocol/SAP Markdown
-uv run tdb dataset import data/json/*.json --out tmp/dataset --documents docs/
+uv run tdb dataset import \
+	data/json/*.json \
+	--out tmp/dataset \
+	--documents docs/
 uv run tdb dataset check tmp/dataset
 
 # Shared environment image, then Harbor tasks
 uv run tdb env build
-uv run tdb build tmp/dataset --out tmp/tasks
+uv run tdb build \
+	tmp/dataset \
+	--out tmp/tasks
 
 # Run an agent with the network canary, then aggregate. The agent reads its
 # provider's API key (here ANTHROPIC_API_KEY); the rubric judge always needs
 # ANTHROPIC_API_KEY.
 export ANTHROPIC_API_KEY=...
-uv run tdb run --tasks tmp/tasks --agent claude-code \
-  --model anthropic/claude-opus-5 --effort high --n-attempts 3 --canary
-uv run tdb report jobs/<job-name> --format md
+uv run tdb run \
+	--tasks tmp/tasks \
+	--agent claude-code \
+	--model anthropic/claude-opus-5 \
+	--effort high \
+	--n-attempts 3 \
+	--canary
+uv run tdb report \
+	"jobs/<job-name>" \
+	--format md
 
 # Grade any directory with output.json and output.R, no Harbor needed
-uv run tdb grade path/to/submission --rubrics tmp/dataset/<task_id>/rubrics.json \
-  --out graded/<task_id> --trajectory path/to/trajectory.json
+uv run tdb grade \
+	path/to/submission \
+	--rubrics "tmp/dataset/<task_id>/rubrics.json" \
+	--out "graded/<task_id>" \
+	--trajectory path/to/trajectory.json
 ```
 
 See the [documentation](https://bbsw-org.github.io/TrialDesignBench/) for the

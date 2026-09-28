@@ -32,10 +32,17 @@ the agent as that user (`[agent] user = "agent"`), so it cannot edit
 ## Build and check
 
 ```bash
-uv run tdb env build                  # native platform, tag trialdesignbench-env:<version>
-uv run tdb env build --platform linux/amd64 --platform linux/arm64 --push --tag ghcr.io/org/tdb-env:1.0.0
-uv run tdb env check                  # tools, R packages, skills, versions
-uv run tdb env check --canary --agent grok-build   # plus the network canary (needs harbor)
+uv run tdb env build # native platform, tag trialdesignbench-env:<version>
+uv run tdb env build \
+	--platform linux/amd64 \
+	--platform linux/arm64 \
+	--push \
+	--tag ghcr.io/org/tdb-env:1.0.0
+uv run tdb env check # tools, R packages, skills, versions
+# plus the network canary (needs harbor)
+uv run tdb env check \
+	--canary \
+	--agent grok-build
 ```
 
 `--tdb-source local` (the default in a source checkout) builds a wheel of the

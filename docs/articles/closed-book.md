@@ -194,11 +194,28 @@ trajectory. A minimal image with Node (for npm-installed CLIs), Python and
 
 ```dockerfile
 FROM node:24-bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        bash ca-certificates curl git jq procps python3 python3-venv \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+	&& apt-get install \
+		-y \
+		--no-install-recommends \
+		bash \
+		ca-certificates \
+		curl \
+		git \
+		jq \
+		procps \
+		python3 \
+		python3-venv \
+	&& rm \
+		-rf \
+		/var/lib/apt/lists/*
 COPY --from=ghcr.io/astral-sh/uv:0.12.19 /uv /uvx /usr/local/bin/
-RUN mkdir -p /app /logs/agent /logs/verifier /logs/artifacts
+RUN mkdir \
+	-p \
+	/app \
+	/logs/agent \
+	/logs/verifier \
+	/logs/artifacts
 WORKDIR /app
 ```
 
@@ -206,8 +223,13 @@ Run it with the agent's Harbor name and a `provider/model`, without any of
 `tdb run`'s closed-book kwargs, then list the tool calls and their results:
 
 ```bash
-harbor run --path probe-claude --env docker --agent claude-code \
-  --model anthropic/claude-sonnet-5 --jobs-dir jobs -y
+harbor run \
+	--path probe-claude \
+	--env docker \
+	--agent claude-code \
+	--model anthropic/claude-sonnet-5 \
+	--jobs-dir jobs \
+	-y
 python3 - <<'PY'
 import glob, json
 t = json.load(open(glob.glob("jobs/*/probe-claude__*/agent/trajectory.json")[0]))

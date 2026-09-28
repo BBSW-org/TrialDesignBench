@@ -41,7 +41,10 @@ directory with `output.json` and `output.R`, and in tests.
 
 ```bash
 # 1. Canonical dataset from curated submissions (+ protocol/SAP Markdown)
-uv run tdb dataset import data/json/*.json --out tmp/dataset --documents path/to/docs
+uv run tdb dataset import \
+	data/json/*.json \
+	--out tmp/dataset \
+	--documents path/to/docs
 uv run tdb dataset check tmp/dataset
 
 # 2. Shared environment image (R, pinned CRAN snapshot, agent CLIs, skills)
@@ -49,15 +52,24 @@ uv run tdb env build
 uv run tdb env check --canary
 
 # 3. Harbor tasks
-uv run tdb build tmp/dataset --out tmp/tasks
+uv run tdb build \
+	tmp/dataset \
+	--out tmp/tasks
 
 # 4. Run agents (needs `trialdesignbench[harbor]` on Python 3.12+)
-export ANTHROPIC_API_KEY=...   # the agent's model API key and the judge's key
-uv run tdb run --tasks tmp/tasks --agent claude-code --model anthropic/claude-opus-5 \
-  --effort high --n-attempts 3 --canary
+export ANTHROPIC_API_KEY=... # the agent's model API key and the judge's key
+uv run tdb run \
+	--tasks tmp/tasks \
+	--agent claude-code \
+	--model anthropic/claude-opus-5 \
+	--effort high \
+	--n-attempts 3 \
+	--canary
 
 # 5. Aggregate
-uv run tdb report jobs/<job-name> --format md
+uv run tdb report \
+	"jobs/<job-name>" \
+	--format md
 ```
 
 Each step has its own article:

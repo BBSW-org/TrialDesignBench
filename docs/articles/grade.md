@@ -1,8 +1,14 @@
 # Grade
 
-```bash
-uv run tdb grade <submission_dir> --rubrics rubrics.json --out <dir> \
-  [--trajectory trajectory.json] [--judge anthropic|fake] [--judge-model ID] [--judge-votes K]
+```text
+uv run tdb grade \
+  <submission_dir> \
+  --rubrics rubrics.json \
+  --out <dir> \
+  [--trajectory trajectory.json] \
+  [--judge anthropic|fake] \
+  [--judge-model ID] \
+  [--judge-votes K]
 ```
 
 The grader is a pure function of the submission artifacts, the rubrics, and

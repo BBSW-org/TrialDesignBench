@@ -35,10 +35,17 @@ refuses any other agent.
 Run one agent, or a matrix by repeating the pair:
 
 ```bash
-uv run tdb run --tasks tmp/tasks --agent opencode --model anthropic/claude-opus-5
-uv run tdb run --tasks tmp/tasks \
-  --agent claude-code --model anthropic/claude-opus-5 \
-  --agent grok-build --model xai/grok-4.7
+uv run tdb run \
+	--tasks tmp/tasks \
+	--agent opencode \
+	--model anthropic/claude-opus-5
+
+uv run tdb run \
+	--tasks tmp/tasks \
+	--agent claude-code \
+	--model anthropic/claude-opus-5 \
+	--agent grok-build \
+	--model xai/grok-4.7
 ```
 
 ## Reasoning effort
@@ -94,11 +101,23 @@ is the placeholder for an agent that keeps the harness default. The same
 agent and model may appear at several levels in one job:
 
 ```bash
-uv run tdb run --tasks tmp/tasks --agent codex --model openai/gpt-5.5 --effort xhigh
-uv run tdb run --tasks tmp/tasks \
-  --agent claude-code --model anthropic/claude-opus-5 --effort medium \
-  --agent claude-code --model anthropic/claude-opus-5 --effort max \
-  --agent grok-build --model xai/grok-4.7 --effort default
+uv run tdb run \
+	--tasks tmp/tasks \
+	--agent codex \
+	--model openai/gpt-5.5 \
+	--effort xhigh
+
+uv run tdb run \
+	--tasks tmp/tasks \
+	--agent claude-code \
+	--model anthropic/claude-opus-5 \
+	--effort medium \
+	--agent claude-code \
+	--model anthropic/claude-opus-5 \
+	--effort max \
+	--agent grok-build \
+	--model xai/grok-4.7 \
+	--effort default
 ```
 
 Levels are not comparable across agents or providers: `high` is Claude
@@ -128,10 +147,13 @@ Export the key for the provider of each `--model`:
 | `xai` | `XAI_API_KEY` | `api.x.ai` | [xAI Console](https://console.x.ai/home) |
 
 ```bash
-export ANTHROPIC_API_KEY=...   # agent (anthropic/ models) and the judge
-export OPENAI_API_KEY=...      # codex, or opencode with openai/ models
-export XAI_API_KEY=...         # grok-build, or opencode with xai/ models
-uv run tdb run --tasks tmp/tasks --agent codex --model openai/gpt-5.5
+export ANTHROPIC_API_KEY=... # agent (anthropic/ models) and the judge
+export OPENAI_API_KEY=...    # codex, or opencode with openai/ models
+export XAI_API_KEY=...       # grok-build, or opencode with xai/ models
+uv run tdb run \
+	--tasks tmp/tasks \
+	--agent codex \
+	--model openai/gpt-5.5
 ```
 
 With `claude-code`, or `opencode` with an `anthropic/` model, the same
@@ -152,11 +174,14 @@ it. `CLAUDE_FORCE_OAUTH=1` makes Harbor drop `ANTHROPIC_API_KEY` from the
 agent, so the key can stay exported for the judge.
 
 ```bash
-claude setup-token                     # prints a one-year OAuth token
+claude setup-token # prints a one-year OAuth token
 export CLAUDE_CODE_OAUTH_TOKEN=...
-export ANTHROPIC_API_KEY=...           # still required by the judge
-uv run tdb run --tasks tmp/tasks --agent claude-code \
-  --model anthropic/claude-opus-5 --auth subscription
+export ANTHROPIC_API_KEY=... # still required by the judge
+uv run tdb run \
+	--tasks tmp/tasks \
+	--agent claude-code \
+	--model anthropic/claude-opus-5 \
+	--auth subscription
 ```
 
 Codex: sign in once with `codex login` (or `codex login --device-auth` on a
@@ -164,10 +189,13 @@ headless machine). Harbor uploads that `auth.json` into each trial and does
 not set `OPENAI_API_KEY` for the agent.
 
 ```bash
-codex login                            # writes ~/.codex/auth.json
-export ANTHROPIC_API_KEY=...           # required by the judge
-uv run tdb run --tasks tmp/tasks --agent codex --model openai/gpt-5.5 \
-  --auth subscription
+codex login                  # writes ~/.codex/auth.json
+export ANTHROPIC_API_KEY=... # required by the judge
+uv run tdb run \
+	--tasks tmp/tasks \
+	--agent codex \
+	--model openai/gpt-5.5 \
+	--auth subscription
 ```
 
 ## Closed-book settings

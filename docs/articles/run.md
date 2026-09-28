@@ -4,11 +4,16 @@
 `harbor run -c job.yaml`.
 
 ```bash
-uv add "trialdesignbench[harbor]"   # Python 3.12+
-export ANTHROPIC_API_KEY=...        # agent (anthropic/ models) and judge
-uv run tdb run --tasks tmp/tasks \
-  --agent claude-code --model anthropic/claude-opus-5 --effort high \
-  --n-attempts 3 --n-concurrent 2 --canary
+uv add "trialdesignbench[harbor]" # Python 3.12+
+export ANTHROPIC_API_KEY=...      # agent (anthropic/ models) and judge
+uv run tdb run \
+	--tasks tmp/tasks \
+	--agent claude-code \
+	--model anthropic/claude-opus-5 \
+	--effort high \
+	--n-attempts 3 \
+	--n-concurrent 2 \
+	--canary
 ```
 
 Which agents can run, the credentials each needs, the reasoning effort
@@ -89,7 +94,10 @@ levels apart.
 ## Regrade
 
 ```bash
-uv run tdb regrade jobs/<job> --tasks tmp/tasks-v2 --job-name <job>-regrade
+uv run tdb regrade \
+	"jobs/<job>" \
+	--tasks tmp/tasks-v2 \
+	--job-name "<job>-regrade"
 ```
 
 This wraps `harbor job regrade`. The recorded agent outputs and trajectories
