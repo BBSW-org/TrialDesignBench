@@ -7,7 +7,7 @@ import json
 import shutil
 import subprocess
 from collections.abc import Iterable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
@@ -21,7 +21,7 @@ def package_version() -> str:
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def sha256_bytes(data: bytes) -> str:
