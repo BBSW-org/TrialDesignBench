@@ -28,10 +28,10 @@ that runs agent harnesses in Docker. The two interact only through files:
 Harbor task directories, a generated `job.yaml`, and the job directory
 that Harbor writes. The currently supported agents are:
 
-- Claude Code
-- Codex CLI
-- Grok Build
-- OpenCode
+- Claude Code (`claude-code`)
+- Codex CLI (`codex`)
+- Grok Build (`grok-build`)
+- OpenCode (`opencode`)
 
 Other Harbor agents are refused because they cannot verifiably run closed book.
 Reasoning effort is a first-class run setting next to the agent and model.
