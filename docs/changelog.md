@@ -1,5 +1,13 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Improvements
+
+- Move the dataset sync script documentation into the script's docstring,
+  and declare the script's dependencies as inline script metadata so
+  `uv run scripts/sync_dataset.py` installs them directly (#111).
+
 ## trialdesignbench 1.3.0
 
 ### Breaking changes
