@@ -1,5 +1,11 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Breaking changes
+
+- Require Python >= 3.12, and drop support for Python 3.10 and 3.11 (#105).
+
 ## trialdesignbench 1.2.3
 
 ### Maintenance

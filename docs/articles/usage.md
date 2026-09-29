@@ -15,8 +15,8 @@ The two tools meet only through files:
 - the job directory Harbor writes (`result.json`, `verifier/reward.json`,
   `verifier/reward-details.json`, `agent/trajectory.json`).
 
-`trialdesignbench` never imports Harbor, so the core package stays light and
-runs on Python 3.10+. Harbor is an optional extra that needs Python 3.12+.
+`trialdesignbench` never imports Harbor, so the core package stays light.
+Harbor is an optional extra. Both require Python 3.12+.
 
 ## Pipeline
 
@@ -56,7 +56,7 @@ uv run tdb build \
 	tmp/dataset \
 	--out tmp/tasks
 
-# 4. Run agents (needs `trialdesignbench[harbor]` on Python 3.12+)
+# 4. Run agents (needs `trialdesignbench[harbor]`)
 export ANTHROPIC_API_KEY=... # the agent's model API key and the judge's key
 uv run tdb run \
 	--tasks tmp/tasks \

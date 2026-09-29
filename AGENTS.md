@@ -18,7 +18,8 @@ statistical designs.
 2. **Integrate with Harbor through files only**: the task directory format, a
    generated `job.yaml` passed to `harbor run -c`, and the job directory it
    writes. Never `import harbor` in package code. `harbor` is the optional
-   extra `trialdesignbench[harbor]` (Python 3.12+); the core stays light.
+   extra `trialdesignbench[harbor]`; the core stays light. The package
+   requires Python 3.12+.
 3. **The grader is a pure function of (submission artifacts, task rubrics,
    judge config).** It runs identically in a Harbor separate-verifier
    container, standalone on any directory with `output.json` and `output.R`,

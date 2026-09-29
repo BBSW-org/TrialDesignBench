@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -17,11 +17,6 @@ from trialdesignbench.build import (
     default_template,
 )
 from trialdesignbench.dataset import DatasetError, import_intake
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 
 IMAGE = "example.org/tdb-env:test"
 
