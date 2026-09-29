@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -18,11 +18,6 @@ from trialdesignbench.run import (
     regrade_command,
 )
 from trialdesignbench.schema import RunManifest
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 
 API_ENV = {
     "ANTHROPIC_API_KEY": "sk-test",

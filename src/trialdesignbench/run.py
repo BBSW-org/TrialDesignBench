@@ -24,7 +24,7 @@ import os
 import re
 import shutil
 import subprocess
-import sys
+import tomllib
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -49,11 +49,6 @@ from trialdesignbench.provenance import (
     utc_now,
 )
 from trialdesignbench.schema import AgentSpec, NetworkPolicy, RunManifest
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:  # pragma: no cover
-    import tomli as tomllib
 
 JUDGE_KEY_ENV = "ANTHROPIC_API_KEY"
 

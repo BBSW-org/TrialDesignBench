@@ -6,7 +6,6 @@ authors = [{ name = "Nan Xiao", email = "me@nanx.me" }]
 dependencies = [
     "pydantic>=2.13.4",
     "rich>=15.0.0",
-    "tomli>=2.2.1; python_version < '3.11'",
     "typer>=0.25.1",
 ]
 readme = "README.md"
@@ -24,8 +23,6 @@ classifiers = [
     "Operating System :: OS Independent",
 
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
@@ -33,14 +30,14 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-requires-python = ">= 3.10"
+requires-python = ">= 3.12"
 
 [project.optional-dependencies]
 # The Anthropic SDK powers the default rubric judge (`tdb grade`).
 judge = ["anthropic>=1.7.0"]
-# Harbor runs agents in Docker (`tdb run`, `tdb regrade`). It requires
-# Python 3.12+, so it is an optional extra; the core package stays light.
-harbor = ["harbor==0.23.0; python_version >= '3.12'"]
+# Harbor runs agents in Docker (`tdb run`, `tdb regrade`). It is an optional
+# extra so the core package stays light.
+harbor = ["harbor==0.23.0"]
 
 [project.scripts]
 tdb = "trialdesignbench.cli.main:main"

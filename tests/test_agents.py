@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 import sys
+import tomllib
 from dataclasses import fields
 from pathlib import Path
 
@@ -12,11 +13,6 @@ import pytest
 from trialdesignbench import agents, environment
 from trialdesignbench.canary import AGENT_RESULT_PATH, RESULT_PATH, write_canary_task
 from trialdesignbench.grade import WEB_TOOL_NAMES
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILES = pytest.mark.parametrize("profile", agents.AGENTS, ids=lambda a: a.name)
