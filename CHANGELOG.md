@@ -11,7 +11,7 @@
 ### Maintenance
 
 - Enable stricter Ruff linting rules and resolve existing violations,
-  including explicit length checks for paired `zip()` inputs.
+  including explicit length checks for paired `zip()` inputs (#114).
 
 ### Documentation
 
