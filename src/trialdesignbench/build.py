@@ -279,7 +279,8 @@ EXPECTED_VERSION="{version}"
         body = f"""
 actual="$({TDB_BIN} --version 2>/dev/null || true)"
 if [ "${{actual}}" != "${{EXPECTED_VERSION}}" ]; then
-    echo "tdb grader version mismatch: image has '${{actual}}', task expects '${{EXPECTED_VERSION}}'" >&2
+    echo "tdb grader version mismatch: image has '${{actual}}'," \\
+        "task expects '${{EXPECTED_VERSION}}'" >&2
     exit 1
 fi
 {TDB_BIN} {grade_args}
@@ -298,7 +299,10 @@ PYTHONPATH=/tests/grader {TDB_PYTHON} -m trialdesignbench.cli.main {grade_args}
 
 def render_tests_dockerfile(options: BuildOptions) -> str:
     """Verifier image definition: shared image plus /tests files."""
-    copy = "COPY --chmod=755 test.sh /tests/test.sh\nCOPY rubrics.json /tests/rubrics.json\n"
+    copy = (
+        "COPY --chmod=755 test.sh /tests/test.sh\n"
+        "COPY rubrics.json /tests/rubrics.json\n"
+    )
     if options.grader_source == "editable":
         copy += "COPY grader/ /tests/grader/\n"
     if options.dockerfile:

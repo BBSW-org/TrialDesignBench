@@ -97,7 +97,7 @@ def parse_agent_pairs(
             versions[i] if versions else None,
             efforts[i] if efforts else None,
         )
-        for i, (a, m) in enumerate(zip(agents, models))
+        for i, (a, m) in enumerate(zip(agents, models, strict=True))
     ]
 
 

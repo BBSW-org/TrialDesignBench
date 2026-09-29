@@ -63,7 +63,9 @@ def filled_output(rubrics: RubricSet) -> dict[str, Any]:
         entry = q.question.skeleton()
         if q.question.question_type == "derivation_required":
             entry["output"]["dimensions"] = {
-                "inputs_used": "HR 0.75, power 82%, one-sided alpha 0.025 (Section 9.2)",
+                "inputs_used": (
+                    "HR 0.75, power 82%, one-sided alpha 0.025 (Section 9.2)"
+                ),
                 "method": "Schoenfeld approximation, implemented in output.R",
                 "calculated_value": "400.0000 deaths",
             }

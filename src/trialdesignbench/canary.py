@@ -40,7 +40,10 @@ _PROBE = r"""#!/usr/bin/env bash
 set -u
 out="{result_path}"
 mkdir -p "$(dirname "$out")"
-probe() {{ curl -sS -o /dev/null -m 15 --connect-timeout 10 "$1" 2>/dev/null; echo $?; }}
+probe() {{
+  curl -sS -o /dev/null -m 15 --connect-timeout 10 "$1" 2>/dev/null
+  echo $?
+}}
 {{
   echo '{{"blocked": {{'
   first=1
@@ -87,12 +90,16 @@ for phase, path in phases.items():
             reasons.append(f"{{phase}}: blocked URL reachable: {{url}}")
     for host, rc in data.get("allowed", {{}}).items():
         if rc != 0:
-            reasons.append(f"{{phase}}: allowed host unreachable: {{host}} (curl exit {{rc}})")
+            reasons.append(
+                f"{{phase}}: allowed host unreachable: {{host}} (curl exit {{rc}})"
+            )
     if not data.get("blocked"):
         reasons.append(f"{{phase}}: no blocked URLs probed")
 reward = 0.0 if reasons else 1.0
 (out / "reward.json").write_text(json.dumps({{"reward": reward}}))
-(out / "canary.json").write_text(json.dumps({{"probe": probes, "reasons": reasons}}, indent=2))
+(out / "canary.json").write_text(
+    json.dumps({{"probe": probes, "reasons": reasons}}, indent=2)
+)
 print(json.dumps({{"reward": reward, "reasons": reasons}}))
 PY
 """
@@ -141,7 +148,9 @@ def write_canary_task(
                 {
                     "name": CANARY_TASK_NAME,
                     "version": "1.0.0",
-                    "description": "Asserts the closed-book network policy is enforced.",
+                    "description": (
+                        "Asserts the closed-book network policy is enforced."
+                    ),
                     "keywords": ["canary"],
                 },
             ),

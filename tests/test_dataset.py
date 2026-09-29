@@ -47,7 +47,7 @@ def test_import_round_trip(dataset_dir: Path) -> None:
     assert [q.id for q in record.questions] == [p["id"] for p in prompts]
 
     # Every curated criterion survives with its importance and scoring.
-    for q, p in zip(rubrics.questions, prompts):
+    for q, p in zip(rubrics.questions, prompts, strict=True):
         got = [(c.criterion, c.importance, c.scoring) for _, c in q.criteria()]
         want = [
             (c["criterion"], c["importance"], c["scoring"])
