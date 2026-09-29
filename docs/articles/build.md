@@ -14,15 +14,15 @@ uv run tdb build \
 
 ```text
 <tasks_dir>/
-  tdb-build.json          dataset digest, package version, template hash, image, time
+  tdb-build.json     Dataset digest, package version, template hash, image, time
   <task_id>/
     task.toml
     instruction.md
-    environment/          empty when a prebuilt image is used
+    environment/     Empty when a prebuilt image is used
     tests/
-      Dockerfile          FROM <image> + COPY test.sh rubrics.json
-      test.sh             runs `tdb grade`
-      rubrics.json        hidden rubrics
+      Dockerfile     FROM <image> + COPY test.sh rubrics.json
+      test.sh        Runs `tdb grade`
+      rubrics.json   Hidden rubrics
 ```
 
 No `solution/` is generated yet. An oracle solution can be added later so

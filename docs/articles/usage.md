@@ -20,16 +20,13 @@ Harbor is an optional extra. Both require Python 3.12+.
 
 ## Pipeline
 
-```text
-curated intake JSON ──tdb dataset import──▶ canonical dataset
-                                             │ tdb build
-                                             ▼
-                                     Harbor task directories
-                                             │ tdb run  (harbor run -c job.yaml)
-                                             ▼
-                                     Harbor job directory ──tdb report──▶ report.json
-                                             ▲
-                            tdb regrade (harbor job regrade)
+```mermaid
+flowchart TD
+  intake["Curated intake JSON"] -->|tdb dataset import| dataset["Canonical dataset"]
+  dataset -->|tdb build| tasks["Harbor task directories"]
+  tasks -->|"tdb run<br/>(harbor run -c job.yaml)"| job["Harbor job directory"]
+  job -->|tdb report| report["report.json"]
+  job -->|"tdb regrade<br/>(harbor job regrade)"| job
 ```
 
 Grading is decoupled from inference. `tdb grade` is a pure function of the

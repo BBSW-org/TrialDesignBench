@@ -97,6 +97,14 @@ toggle.name = "Switch to light mode"
 repo = "fontawesome/brands/github"
 
 # ----------------------------------------------------------------------------
+# Section for configuring Markdown extensions
+# ----------------------------------------------------------------------------
+[project.markdown_extensions]
+pymdownx.superfences.custom_fences = [
+    { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+
+# ----------------------------------------------------------------------------
 # Section for configuring mkdocstrings plugin
 # ----------------------------------------------------------------------------
 [project.plugins.mkdocstrings]
