@@ -33,12 +33,12 @@ uv run tdb dataset import \
 
 ```text
 <dataset_dir>/
-  dataset.json            schema_version, dataset_version, per-task digests, digest
+  dataset.json      schema_version, dataset_version, per-task digests, digest
   <task_id>/
-    task.json             TaskRecord: trial id, source submission, document ref,
-                          agent-visible question skeleton
-    document.md           protocol/SAP text (Mathpix Markdown)
-    rubrics.json          hidden RubricSet: questions + criteria per dimension
+    task.json       TaskRecord: trial id, source submission, document ref,
+                    agent-visible question skeleton
+    document.md     Protocol/SAP text (Mathpix Markdown)
+    rubrics.json    Hidden RubricSet: questions + criteria per dimension
 ```
 
 `rubrics.json` is the only file with rubric text. It is copied into each
