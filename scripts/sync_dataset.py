@@ -1,15 +1,85 @@
-"""Sync TrialDesignBench dataset from Google Sheets to local + Hugging Face.
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "huggingface-hub",
+#     "openpyxl",
+#     "pandas",
+#     "pyarrow",
+# ]
+#
+# [tool.uv]
+# exclude-newer = "7 days"
+# ///
+r"""Sync the TrialDesignBench source dataset from Google Sheets to Hugging Face.
+
+Pulls the master Google Sheet, downloads the protocol and SAP PDFs it links
+to, and uploads the changes to the Hugging Face dataset
+`trialdesignbench/source`. The constants below this docstring set the sheet
+ID and tab, the Hugging Face repo, and the output paths.
 
 Steps:
-1. Download the latest sheet as CSV from Google Sheets.
-2. Diff against the existing tdr.parquet by the "#" column to find new rows.
-3. Download protocol and SAP PDFs for new rows (skip if no link).
-4. Overwrite tdr.parquet and upload the changed files to Hugging Face.
 
-Usage:
-    python sync_dataset.py              # full sync
-    python sync_dataset.py --no-upload  # local only
-    python sync_dataset.py --dry-run    # show what would happen
+1. Download the sheet as CSV. If the file is an uploaded .xlsx rather than a
+   native Google Sheet, download it and convert it with openpyxl.
+2. Report rows whose `#` is not yet in `data/tdr.parquet`, then overwrite
+   `data/tdr.parquet` with the full sheet.
+3. For every row with a linked PDF missing on disk, download
+   `Study Protocol Link` to `protocol.pdf` and `Protocol+SAP / SAP Link` to
+   `sap.pdf` under `documents/<slug>/`. `<slug>` is the last two path
+   segments of `Paper Link` joined by `_`, so
+   `https://doi.org/10.1056/nejmoa2511478` becomes `10.1056_nejmoa2511478`.
+   Rows without links or a usable `Paper Link` are skipped. A failed download
+   writes `protocol.error.txt` or `sap.error.txt` instead.
+4. Upload `tdr.parquet` and the new PDFs with `hf upload`. Above 200 files,
+   upload the whole data directory with `hf upload-large-folder`.
+
+Data directory layout:
+
+    <data_dir>/
+      data/
+        tdr.parquet           latest sheet content (snappy-compressed)
+      documents/
+        <slug>/
+          protocol.pdf
+          sap.pdf
+          protocol.error.txt  only after a failed download
+          sap.error.txt       only after a failed download
+
+Setup:
+
+1. Share the Google Sheet as "Anyone with the link: Viewer".
+2. Log in to Hugging Face with a write token from
+   https://huggingface.co/settings/tokens:
+
+       uvx --from huggingface-hub hf auth login
+
+Usage (`uv run` installs the dependencies declared at the top of this file):
+
+    # Preview the diff without writing anything
+    uv run scripts/sync_dataset.py \
+        --data-dir /path/to/source \
+        --dry-run
+
+    # Update tdr.parquet and download PDFs, but do not upload
+    uv run scripts/sync_dataset.py \
+        --data-dir /path/to/source \
+        --no-upload
+
+    # Full sync
+    uv run scripts/sync_dataset.py \
+        --data-dir /path/to/source
+
+`--data-dir` defaults to the directory containing this script.
+
+Notes:
+
+- The sheet is the source of truth for `tdr.parquet`: edits propagate and
+  deleted rows drop out. PDFs are never deleted, locally or on Hugging Face;
+  remove them by hand if needed.
+- Existing PDFs are never downloaded again; delete one to force a refresh.
+  Failed downloads are retried on the next run, but a stale `*.error.txt`
+  stays in place after a later success.
+- `HTTP 403` is common for paywalled publisher links such as NEJM.
 """
 
 from __future__ import annotations
@@ -84,7 +154,7 @@ def _fetch_xlsx_as_csv() -> str:
     except ImportError as e:
         msg = (
             "openpyxl is required to read uploaded .xlsx Drive files. "
-            "Install with: pip install openpyxl"
+            "Run this script with `uv run` to install its dependencies."
         )
         raise RuntimeError(msg) from e
 
@@ -252,7 +322,7 @@ def _hf_cli() -> str:
     if candidate.exists():
         return str(candidate)
     raise RuntimeError(
-        "`hf` CLI not found. Install with: pip install -U 'huggingface_hub[cli]'"
+        "`hf` CLI not found. Run this script with `uv run` to install its dependencies."
     )
 
 
@@ -282,7 +352,9 @@ def hf_upload(paths: list[Path]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--no-upload", action="store_true", help="Skip HF upload.")
     parser.add_argument(
         "--dry-run", action="store_true", help="Show diff only, no downloads or upload."
