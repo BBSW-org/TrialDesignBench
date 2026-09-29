@@ -25,7 +25,7 @@ class ImagePins:
     cran_snapshot: str = "2026-09-27"
     ubuntu_codename: str = "noble"
     node_version: str = "24.21.0"
-    uv_version: str = "0.12.19"
+    uv_version: str = "0.12.20"
     # Agent CLIs (Harbor agent versions).
     claude_code_version: str = "2.1.284"
     codex_version: str = "0.158.0"
