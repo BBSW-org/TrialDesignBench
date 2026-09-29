@@ -8,6 +8,10 @@
   and declare the script's dependencies as inline script metadata so
   `uv run scripts/sync_dataset.py` installs them directly (#111).
 
+### Documentation
+
+- Improve README content structure and organization (#112).
+
 ## trialdesignbench 1.3.0
 
 ### Breaking changes
