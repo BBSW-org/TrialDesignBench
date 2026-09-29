@@ -1,5 +1,13 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Maintenance
+
+- Bump the pinned Claude Code to 2.1.285 (was 2.1.284), Codex CLI to
+  0.159.1 (was 0.158.0), and Grok Build to 1.0.44 (was 1.0.41).
+  Update the Docker image bundled dependency versions: uv 0.12.21 (#116).
+
 ## trialdesignbench 1.3.1
 
 ### Improvements
