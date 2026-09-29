@@ -97,8 +97,11 @@ def test_live_anthropic_judge(rubrics: RubricSet) -> None:
     good = {
         **q.question.skeleton(),
         "output": {
-            "extracted_value": "Primary endpoint: overall survival (OS), defined as time from "
-            "randomization to death due to any cause, tested in the ITT population (Section 9.2)."
+            "extracted_value": (
+                "Primary endpoint: overall survival (OS), defined as time from "
+                "randomization to death due to any cause, tested in the ITT "
+                "population (Section 9.2)."
+            )
         },
     }
     judge = AnthropicJudge(os.environ.get("TDB_JUDGE_MODEL"))

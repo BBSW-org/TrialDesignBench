@@ -362,7 +362,10 @@ def main() -> None:
     parser.add_argument(
         "--data-dir",
         default=None,
-        help="Directory containing data/ and documents/. Defaults to the script directory.",
+        help=(
+            "Directory containing data/ and documents/. "
+            "Defaults to the script directory."
+        ),
     )
     args = parser.parse_args()
 

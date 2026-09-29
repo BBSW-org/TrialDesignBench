@@ -428,7 +428,8 @@ class AnthropicJudge:
             missing = sorted(set(ids) - set(parsed))
             extra = sorted(set(parsed) - set(ids))
             raise _Retryable(
-                f"judge results do not match criteria (missing={missing}, extra={extra})"
+                "judge results do not match criteria "
+                f"(missing={missing}, extra={extra})"
             )
         return parsed, raw
 

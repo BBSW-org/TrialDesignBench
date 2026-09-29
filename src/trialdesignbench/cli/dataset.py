@@ -45,7 +45,9 @@ def import_(
         bool | None,
         typer.Option(
             "--publicly-indexed/--not-publicly-indexed",
-            help="Whether the source documents are publicly indexed (default: unknown).",
+            help=(
+                "Whether the source documents are publicly indexed (default: unknown)."
+            ),
         ),
     ] = None,
     force: Annotated[

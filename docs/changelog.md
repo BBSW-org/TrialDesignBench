@@ -8,6 +8,11 @@
   and declare the script's dependencies as inline script metadata so
   `uv run scripts/sync_dataset.py` installs them directly (#111).
 
+### Maintenance
+
+- Enable stricter Ruff linting rules and resolve existing violations,
+  including explicit length checks for paired `zip()` inputs.
+
 ### Documentation
 
 - Improve README content structure and organization (#112).

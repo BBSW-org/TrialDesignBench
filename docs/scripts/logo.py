@@ -64,7 +64,9 @@ def mix(stops: Sequence[str], u: float) -> str:
     i = min(int(scaled), len(stops) - 2)
     w = scaled - i
     a, b = (bytes.fromhex(color[1:]) for color in stops[i : i + 2])
-    return "#" + "".join(f"{round(x + (y - x) * w):02X}" for x, y in zip(a, b))
+    return "#" + "".join(
+        f"{round(x + (y - x) * w):02X}" for x, y in zip(a, b, strict=True)
+    )
 
 
 def gradient(name: str, stops: Sequence[str], start: Point, end: Point) -> str:
@@ -95,7 +97,10 @@ def hexagon(center: Point, apothem: float, radius: float) -> str:
         nx, ny = vertices[(i + 1) % 6]
         start = (vx + (px - vx) * inset, vy + (py - vy) * inset)
         end = (vx + (nx - vx) * inset, vy + (ny - vy) * inset)
-        d += f"{'L' if d else 'M'}{pt(start)}A{fmt(radius)} {fmt(radius)} 0 0 1 {pt(end)}"
+        d += (
+            f"{'L' if d else 'M'}{pt(start)}"
+            f"A{fmt(radius)} {fmt(radius)} 0 0 1 {pt(end)}"
+        )
     return d + "Z"
 
 
@@ -164,7 +169,8 @@ def pattern(
         final = (cx + sign * right, cy - sign * z_final)
         lines.append(
             f'<circle cx="{fmt(final[0])}" cy="{fmt(final[1])}" r="{fmt(dot)}" '
-            f'fill="{mix(CURVES, 0.5)}" stroke="#fff" stroke-width="{fmt(dot * 0.36)}"/>'
+            f'fill="{mix(CURVES, 0.5)}" stroke="#fff" '
+            f'stroke-width="{fmt(dot * 0.36)}"/>'
         )
     return (
         f'<g fill="none" stroke-width="{fmt(width)}" stroke-linecap="round">'

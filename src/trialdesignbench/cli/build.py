@@ -33,7 +33,10 @@ def build(
         str,
         typer.Option(
             "--grader-source",
-            help="image (preinstalled), pypi (uvx pinned release), or editable (copy source).",
+            help=(
+                "image (preinstalled), pypi (uvx pinned release), "
+                "or editable (copy source)."
+            ),
         ),
     ] = "image",
     prompt_template: Annotated[
