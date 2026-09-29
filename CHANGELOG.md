@@ -1,5 +1,20 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Breaking changes
+
+- Require Python 3.12 or later; drop support for Python 3.10 and 3.11.
+
+    Harbor, which powers `tdb run` and `tdb regrade`, already needed
+    Python 3.12+, so the `harbor` extra could not be installed on the
+    older versions we claimed to support. The shared Docker image runs
+    the grader on Python 3.12 as well. Python 3.10 reaches end of life
+    in October 2026. Raising the floor also removes the conditional
+    `tomli` dependency in favor of the standard library `tomllib`
+    module and drops the `python_version` marker from the `harbor`
+    extra.
+
 ## trialdesignbench 1.2.3
 
 ### Maintenance
