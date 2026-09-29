@@ -6,6 +6,10 @@
 
 - Require Python >= 3.12, and drop support for Python 3.10 and 3.11 (#105).
 
+### Maintenance
+
+- Update the Docker image bundled dependency versions: uv 0.12.20 (#106).
+
 ## trialdesignbench 1.2.3
 
 ### Maintenance
