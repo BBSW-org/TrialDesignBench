@@ -56,8 +56,6 @@ per agent before launch, recorded with every job, and kept apart in reports.
 
 ## Installation
 
-Requires Python 3.12+.
-
 ```bash
 uv add trialdesignbench           # dataset, build, grade, report
 uv add "trialdesignbench[judge]"  # + Anthropic SDK for the rubric judge
