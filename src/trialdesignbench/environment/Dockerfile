@@ -8,14 +8,14 @@
 # ARG defaults below must equal those pins (enforced by the test suite).
 
 ARG R_VERSION=4.6.1
-ARG UV_VERSION=0.12.20
+ARG UV_VERSION=0.12.21
 
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
 
 FROM rocker/r-ver:${R_VERSION}
 
 ARG R_VERSION=4.6.1
-ARG UV_VERSION=0.12.20
+ARG UV_VERSION=0.12.21
 ARG CRAN_SNAPSHOT=2026-09-27
 ARG UBUNTU_CODENAME=noble
 ARG NODE_VERSION=24.21.0

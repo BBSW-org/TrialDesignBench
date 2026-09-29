@@ -1,5 +1,12 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Maintenance
+
+- Bump the pinned [TBA].
+  Update the Docker image bundled dependency versions: uv 0.12.21 (#116).
+
 ## trialdesignbench 1.3.1
 
 ### Improvements
