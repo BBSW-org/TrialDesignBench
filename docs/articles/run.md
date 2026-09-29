@@ -4,8 +4,8 @@
 `harbor run -c job.yaml`.
 
 ```bash
-uv add "trialdesignbench[harbor]" # Python 3.12+
-export ANTHROPIC_API_KEY=...      # agent (anthropic/ models) and judge
+uv add "trialdesignbench[harbor]"
+export ANTHROPIC_API_KEY=... # agent (anthropic/ models) and judge
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent claude-code \
