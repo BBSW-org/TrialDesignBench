@@ -19,8 +19,9 @@ uv run tdb run \
 Which agents can run, the credentials each needs, the reasoning effort
 levels each accepts, and the closed-book settings `tdb run` applies are
 described in [Agents](agents.md). The rubric
-judge in the verifier always needs `ANTHROPIC_API_KEY`; see
-[Judge](judge.md).
+judge in the verifier needs the key matching the built judge model
+(`ANTHROPIC_API_KEY`, or `OPENCODE_API_KEY` for `opencode-go/` models);
+see [Judge](judge.md).
 
 ## Options
 

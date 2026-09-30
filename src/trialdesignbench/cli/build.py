@@ -46,7 +46,12 @@ def build(
         ),
     ] = None,
     judge_model: Annotated[
-        str, typer.Option("--judge-model", help="Model for the rubric judge.")
+        str,
+        typer.Option(
+            "--judge-model",
+            help="Model for the rubric judge "
+            "(opencode-go/ prefix selects the OpenCode Go judge).",
+        ),
     ] = DEFAULT_JUDGE_MODEL,
     agent_timeout: Annotated[
         float, typer.Option("--agent-timeout", help="Seconds.")

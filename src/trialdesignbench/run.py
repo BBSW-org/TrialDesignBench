@@ -36,9 +36,9 @@ from trialdesignbench.build import (
     AGENT_HOSTS_MARKER,
     BUILD_MANIFEST,
     ENVIRONMENT_HOSTS_MARKER,
-    JUDGE_API_HOST,
 )
 from trialdesignbench.canary import write_canary_task
+from trialdesignbench.judge import judge_api_host, judge_key_env, judge_kind_for_model
 from trialdesignbench.provenance import (
     digest_tree,
     docker_image_digest,
@@ -49,8 +49,6 @@ from trialdesignbench.provenance import (
     utc_now,
 )
 from trialdesignbench.schema import AgentSpec, NetworkPolicy, RunManifest
-
-JUDGE_KEY_ENV = "ANTHROPIC_API_KEY"
 
 
 class RunError(RuntimeError):
@@ -136,6 +134,13 @@ def agent_config(
         **effort_kwargs,
     }
     agent_env = {**profile.env, **auth_env}
+    if provider == "opencode-go":
+        # Harbor has no credential mapping for this provider, so the key must
+        # travel in agents[].env (agent-phase-only). The ${} template is
+        # resolved by Harbor at launch from the host environment; the value
+        # is validated above and never written to job.yaml.
+        key_env = agents.PROVIDERS[provider].key_env
+        agent_env[key_env] = f"${{{key_env}}}"
     config: dict[str, Any] = {
         "name": request.agent,
         "model_name": request.model,
@@ -311,8 +316,10 @@ def plan_run(
     build = read_build_manifest(tasks_dir)
     if n_concurrent is None:
         n_concurrent = 1 if auth == "subscription" else 2
-    if not env.get(JUDGE_KEY_ENV):
-        raise RunError(f"the rubric judge in the verifier requires {JUDGE_KEY_ENV}")
+    judge_kind = judge_kind_for_model(build.get("judge_model"))
+    judge_key = judge_key_env(judge_kind)
+    if not env.get(judge_key):
+        raise RunError(f"the rubric judge in the verifier requires {judge_key}")
     configs, specs = [], []
     for req in requests:
         agent_cfg, spec = agent_config(req, auth=auth, skills=skills, env=env)
@@ -408,7 +415,7 @@ def plan_run(
             environment_network_mode="allowlist",
             environment_allowed_hosts=tuple(environment_hosts),
             verifier_network_mode="allowlist",
-            verifier_allowed_hosts=(JUDGE_API_HOST,),
+            verifier_allowed_hosts=(judge_api_host(judge_kind),),
             disabled_tools={
                 s.agent: agents.get_profile(s.agent).disabled_tools for s in specs
             },

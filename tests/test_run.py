@@ -23,6 +23,7 @@ API_ENV = {
     "ANTHROPIC_API_KEY": "sk-test",
     "OPENAI_API_KEY": "sk-test",
     "XAI_API_KEY": "sk-test",
+    "OPENCODE_API_KEY": "sk-test",
 }
 
 
@@ -160,6 +161,11 @@ def test_grok_build_two_phase_policy(tasks_dir: Path, tmp_path: Path) -> None:
         ("anthropic/claude-opus-5-5", "api.anthropic.com", "ANTHROPIC_API_KEY"),
         ("openai/gpt-6-astra", "api.openai.com", "OPENAI_API_KEY"),
         ("xai/grok-4.7", "api.x.ai", "XAI_API_KEY"),
+        (
+            "opencode-go/muse-spark-1.3-contributor",
+            "opencode.ai",
+            "OPENCODE_API_KEY",
+        ),
     ],
 )
 def test_opencode_providers(
@@ -173,6 +179,12 @@ def test_opencode_providers(
     assert json.loads(agent["env"]["OPENCODE_PERMISSION"]) == config["permission"]
     assert agent["env"]["OPENCODE_DISABLE_MODELS_FETCH"] == "1"
     assert agent["env"]["OPENCODE_MODELS_PATH"] == environment.OPENCODE_MODELS_PATH
+    if model.startswith("opencode-go/"):
+        # Harbor has no credential mapping for this provider: the key travels
+        # as a template resolved at launch, never stored.
+        assert agent["env"]["OPENCODE_API_KEY"] == "${OPENCODE_API_KEY}"
+    else:
+        assert "OPENCODE_API_KEY" not in agent["env"]
     agent_hosts, setup = task_policy(p)
     assert agent_hosts == [host]
     assert "registry.npmjs.org" in setup and host in setup
@@ -339,6 +351,36 @@ def test_judge_key_required(tasks_dir: Path, tmp_path: Path) -> None:
             tmp_path,
             [AgentRequest("codex", "openai/x")],
             env={"OPENAI_API_KEY": "k"},
+        )
+
+
+@pytest.fixture
+def go_tasks_dir(dataset_dir: Path, tmp_path: Path) -> Path:
+    out = tmp_path / "go-tasks"
+    build_tasks(
+        dataset_dir,
+        out,
+        options=BuildOptions(
+            image="tdb-env:test",
+            judge_model="opencode-go/muse-spark-1.3-contributor",
+        ),
+    )
+    return out
+
+
+def test_opencode_go_judge_run(go_tasks_dir: Path, tmp_path: Path) -> None:
+    req = [AgentRequest("opencode", "opencode-go/muse-spark-1.3-contributor")]
+    p = plan(go_tasks_dir, tmp_path, req)
+    assert p.manifest.network_policy.verifier_allowed_hosts == ("opencode.ai",)
+    agent = load_job(p)["agents"][0]
+    assert agent["env"]["OPENCODE_API_KEY"] == "${OPENCODE_API_KEY}"
+    assert "sk-test" not in p.job_yaml.read_text()
+    with pytest.raises(RunError, match="OPENCODE_API_KEY"):
+        plan(
+            go_tasks_dir,
+            tmp_path,
+            req,
+            env={k: v for k, v in API_ENV.items() if k != "OPENCODE_API_KEY"},
         )
 
 

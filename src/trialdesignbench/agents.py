@@ -56,6 +56,8 @@ PROVIDERS: Mapping[str, Provider] = {
     "anthropic": Provider("ANTHROPIC_API_KEY", "api.anthropic.com"),
     "openai": Provider("OPENAI_API_KEY", "api.openai.com"),
     "xai": Provider("XAI_API_KEY", "api.x.ai"),
+    # OpenCode Go subscription gateway; every model endpoint lives under it.
+    "opencode-go": Provider("OPENCODE_API_KEY", "opencode.ai"),
 }
 
 
@@ -250,7 +252,7 @@ AGENTS: tuple[AgentProfile, ...] = (
     AgentProfile(
         name="opencode",
         title="OpenCode",
-        providers=("anthropic", "openai", "xai"),
+        providers=("anthropic", "openai", "xai", "opencode-go"),
         version_pin="opencode_version",
         preinstalled=False,
         # Harbor's install runs nvm and `npm i -g opencode-ai` on every setup.
@@ -286,7 +288,9 @@ AGENTS: tuple[AgentProfile, ...] = (
         },
         disabled_tools=tuple(_OPENCODE_DENIED),
         note="setup hosts and both phases pass the canary and a Harbor "
-        "install-only run; confirm the agent phase with a smoke run",
+        "install-only run; confirm the agent phase with a smoke run. "
+        "opencode-go models need OPENCODE_API_KEY, which `tdb run` passes "
+        "in agents[].env because Harbor has no credential mapping for it.",
     ),
 )
 

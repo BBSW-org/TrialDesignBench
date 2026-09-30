@@ -11,8 +11,8 @@ are scored.
 
 | Setting | Default | Inside Harbor (`tdb run`, `tdb regrade`) | Standalone (`tdb grade`) |
 | --- | --- | --- | --- |
-| Judge | `anthropic` (`AnthropicJudge`) | always `anthropic` | `--judge anthropic\|fake` |
-| Model | `claude-opus-5-5` | fixed per task at build time: `tdb build --judge-model ID` writes `TDB_JUDGE_MODEL` into `[verifier.env]` | `--judge-model ID`, else `TDB_JUDGE_MODEL`, else the default |
+| Judge | `anthropic` (`AnthropicJudge`) | the backend matching the built judge model (baked into `test.sh` as `--judge`) | `--judge anthropic\|opencode-go\|fake` |
+| Model | `claude-opus-5-5` | fixed per task at build time: `tdb build --judge-model ID` writes `TDB_JUDGE_MODEL` into `[verifier.env]`; an `opencode-go/` prefix selects the OpenCode Go judge | `--judge-model ID`, else `TDB_JUDGE_MODEL`, else the default |
 | Votes | 1 | 1 | `--judge-votes K` (majority of K calls; ties are `unclear`) |
 
 The judge model is recorded in `tdb-build.json`, `tdb-run.json`, and every
@@ -28,22 +28,37 @@ These models use the API's default sampling behavior; other models receive
 `temperature=0`. A question whose judge call still fails marks all its
 criteria `error`, which zeroes the trial's reward.
 
+`OpencodeGoJudge` grades with the same prompt, response contract, voting, and
+retry semantics over the OpenCode Go gateway's Responses API with structured
+JSON output. It uses the standard library only, so the `judge` extra is not
+needed. The gateway requires a stable `x-opencode-session` header per
+conversation and rejects generic HTTP-library user agents, so each judge
+sends one generated session id and identifies as
+`trialdesignbench/<version>`.
+
 ## Authentication
 
-The judge needs `ANTHROPIC_API_KEY`, an Anthropic API key from the
-[Claude Console](https://platform.claude.com/). A Claude subscription token
-(`CLAUDE_CODE_OAUTH_TOKEN`) cannot be used for the judge.
+Which key the judge needs depends on its backend:
 
-- **`tdb run` and `tdb regrade`.** Export `ANTHROPIC_API_KEY` in the shell
-  that runs them. Each task's `[verifier.env]` maps
-  `ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"`, so Harbor copies the host
-  value into the verifier container only. Harbor asks before passing host
-  variables into a task; `tdb run --yes` skips that prompt. `tdb run` fails
-  before launching when the variable is missing, whatever agent or `--auth`
-  mode is used.
-- **`tdb grade`.** Export `ANTHROPIC_API_KEY` in the environment. The judge
-  needs the `judge` extra: `uv add "trialdesignbench[judge]"` (the shared
-  image already includes it).
+| Backend | Key | From |
+| --- | --- | --- |
+| `anthropic` | `ANTHROPIC_API_KEY` | [Claude Console](https://platform.claude.com/) |
+| `opencode-go` | `OPENCODE_API_KEY` | [OpenCode Console](https://opencode.ai/auth) (Go subscription) |
+
+A Claude subscription token (`CLAUDE_CODE_OAUTH_TOKEN`) cannot be used for
+the judge.
+
+- **`tdb run` and `tdb regrade`.** Export the key matching the built judge
+  model in the shell that runs them: `ANTHROPIC_API_KEY`, or
+  `OPENCODE_API_KEY` for tasks built with `--judge-model
+  opencode-go/<model>`. Each task's `[verifier.env]` maps the key as
+  `"${...}"`, so Harbor copies the host value into the verifier container
+  only. Harbor asks before passing host variables into a task; `tdb run
+  --yes` skips that prompt. `tdb run` fails before launching when the
+  variable is missing, whatever agent or `--auth` mode is used.
+- **`tdb grade`.** Export the matching key in the environment. The Anthropic
+  judge needs the `judge` extra: `uv add "trialdesignbench[judge]"` (the
+  shared image already includes it); the OpenCode Go judge needs no extra.
 
 ```bash
 export ANTHROPIC_API_KEY=...
@@ -64,11 +79,14 @@ and Harbor keeps it away from the agent (see
 
 ## Network
 
-The verifier container has its own allowlist with only the judge API host,
-`api.anthropic.com` (plus PyPI hosts with `tdb build --grader-source pypi`).
-Only `ANTHROPIC_API_KEY` and `TDB_JUDGE_MODEL` are passed to it, so a custom
+The verifier container has its own allowlist with only the judge API host
+(`api.anthropic.com`, or `opencode.ai` for tasks built with an `opencode-go/`
+judge model; plus PyPI hosts with `tdb build --grader-source pypi`).
+Only the judge key and `TDB_JUDGE_MODEL` are passed to it, so a custom
 `ANTHROPIC_BASE_URL` does not apply inside Harbor. Standalone `tdb grade`
-uses the Anthropic SDK's defaults, which honor `ANTHROPIC_BASE_URL`.
+uses the Anthropic SDK's defaults, which honor `ANTHROPIC_BASE_URL`, and
+`OPENCODE_GO_BASE_URL` for the OpenCode Go gateway (default
+`https://opencode.ai/zen/go/v1`).
 
 ## Dry runs without a key
 

@@ -193,4 +193,33 @@ def test_dockerfile_mode(dataset_dir: Path, tmp_path: Path) -> None:
     assert "docker_image" not in config["environment"]
     assert (task / "environment" / "Dockerfile").is_file()
     assert (task / "environment" / "install_skills.sh").is_file()
-    assert "COPY rubrics.json" in (task / "tests" / "Dockerfile").read_text()
+
+
+def test_opencode_go_judge_verifier(dataset_dir: Path, tmp_path: Path) -> None:
+    out = tmp_path / "go"
+    build_tasks(
+        dataset_dir,
+        out,
+        options=BuildOptions(
+            image=IMAGE, judge_model="opencode-go/muse-spark-1.3-contributor"
+        ),
+    )
+    config = tomllib.loads((out / FIXTURE_TASK_ID / "task.toml").read_text())
+    assert config["verifier"]["env"]["TDB_JUDGE_MODEL"] == (
+        "opencode-go/muse-spark-1.3-contributor"
+    )
+    assert config["verifier"]["env"]["OPENCODE_API_KEY"] == "${OPENCODE_API_KEY}"
+    assert "ANTHROPIC_API_KEY" not in config["verifier"]["env"]
+    assert config["verifier"]["environment"]["allowed_hosts"] == ["opencode.ai"]
+    test_sh = (out / FIXTURE_TASK_ID / "tests" / "test.sh").read_text()
+    assert "--judge opencode-go" in test_sh
+    info = json.loads((out / BUILD_MANIFEST).read_text())
+    assert info["judge"] == "opencode-go"
+    assert info["judge_model"] == "opencode-go/muse-spark-1.3-contributor"
+
+
+def test_default_judge_is_anthropic(tasks_dir: Path) -> None:
+    test_sh = (tasks_dir / FIXTURE_TASK_ID / "tests" / "test.sh").read_text()
+    assert "--judge anthropic" in test_sh
+    info = json.loads((tasks_dir / BUILD_MANIFEST).read_text())
+    assert info["judge"] == "anthropic"

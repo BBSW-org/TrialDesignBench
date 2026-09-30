@@ -18,10 +18,11 @@ refuses any other agent.
 | `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.285 | in the image | `anthropic` | `api`, `subscription` |
 | `codex` | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) | 0.159.1 | in the image | `openai` | `api`, `subscription` |
 | `grok-build` | [Grok Build](https://docs.x.ai/build/overview) | 1.0.44 | by Harbor at setup | `xai` | `api` |
-| `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.18.33 | by Harbor at setup | `anthropic`, `openai`, `xai` | `api` |
+| `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.18.33 | by Harbor at setup | `anthropic`, `openai`, `xai`, `opencode-go` | `api` |
 
 - `--model` is always `<provider>/<model>`, for example
-  `anthropic/claude-opus-5-5`, `openai/gpt-6-astra`, or `xai/grok-4.7`.
+  `anthropic/claude-opus-5-5`, `openai/gpt-6-astra`, `xai/grok-4.7`, or
+  `opencode-go/muse-spark-1.3-contributor`.
   The provider decides which API key is required and which API host is
   allowlisted, so a model from any other provider is refused.
 - The pinned version is passed to Harbor as the agent `version`;
@@ -145,11 +146,13 @@ Export the key for the provider of each `--model`:
 | `anthropic` | `ANTHROPIC_API_KEY` | `api.anthropic.com` | [Claude Console](https://platform.claude.com/) |
 | `openai` | `OPENAI_API_KEY` | `api.openai.com` | [OpenAI Platform](https://platform.openai.com/api-keys) |
 | `xai` | `XAI_API_KEY` | `api.x.ai` | [xAI Console](https://console.x.ai/home) |
+| `opencode-go` | `OPENCODE_API_KEY` | `opencode.ai` | [OpenCode Console](https://opencode.ai/auth) (Go subscription) |
 
 ```bash
 export ANTHROPIC_API_KEY=... # agent (anthropic/ models) and the judge
 export OPENAI_API_KEY=...    # codex, or opencode with openai/ models
 export XAI_API_KEY=...       # grok-build, or opencode with xai/ models
+export OPENCODE_API_KEY=...  # opencode with opencode-go/ models
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent codex \
@@ -157,7 +160,14 @@ uv run tdb run \
 ```
 
 With `claude-code`, or `opencode` with an `anthropic/` model, the same
-`ANTHROPIC_API_KEY` serves the agent and the judge.
+`ANTHROPIC_API_KEY` serves the agent and the judge. With `opencode` and an
+`opencode-go/` model, the agent uses `OPENCODE_API_KEY`; the judge uses
+whichever key its own backend needs (see [Judge](judge.md#authentication)).
+
+Harbor has no credential mapping for `opencode-go`, so `tdb run` passes
+`OPENCODE_API_KEY` in `agents[].env` (agent phase only) as
+`${OPENCODE_API_KEY}`. Harbor resolves the template from the host
+environment at launch; the value is never written to `job.yaml`.
 
 ### Subscriptions (`--auth subscription`)
 
@@ -235,6 +245,7 @@ Every task has two allowlists (see [Environment](environment.md#network-policy-c
 | `codex` | `subscription` | `chatgpt.com`, `auth.openai.com` | nothing | unverified |
 | `grok-build` | `api` | `api.x.ai` | `archive.ubuntu.com`, `security.ubuntu.com`, `ports.ubuntu.com`, `x.ai` | canary and Harbor install-only run pass; needs a smoke run |
 | `opencode` | `api` | the provider's API host | `raw.githubusercontent.com`, `github.com`, `nodejs.org`, `registry.npmjs.org` | canary and Harbor install-only run pass; needs a smoke run |
+| `opencode` (`opencode-go/` models) | `api` | `opencode.ai` | same as `opencode` | unverified: needs a smoke run with `OPENCODE_API_KEY` |
 
 Entries not verified by a smoke run make `tdb run` print a warning. Confirm
 them with `tdb env check --canary --agent <name> [--provider <provider>]` and

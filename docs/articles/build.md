@@ -59,8 +59,9 @@ the test suite checks this.
   by `tdb run` with the model API hosts plus any install hosts (see
   [Run](run.md#network-allowlists)).
 - `[verifier] environment_mode = "separate"`, `timeout_sec = 1800`.
-- `[verifier.env]`: `TDB_JUDGE_MODEL` and
-  `ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"`.
+- `[verifier.env]`: `TDB_JUDGE_MODEL` and the judge key as
+  `"${...}"` (`ANTHROPIC_API_KEY`, or `OPENCODE_API_KEY` for an `opencode-go/`
+  judge model).
 - `[verifier.environment]`: `network_mode = "allowlist"` with only the judge
   API host.
 - `artifacts = ["/app/output.json", "/app/output.R", "/logs/agent/trajectory.json"]`.

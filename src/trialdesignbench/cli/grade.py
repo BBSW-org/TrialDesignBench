@@ -10,12 +10,19 @@ from rich.table import Table
 from trialdesignbench.cli._console import console, fail
 from trialdesignbench.dataset import DatasetError
 from trialdesignbench.grade import DEFAULT_RSCRIPT_TIMEOUT_SEC, grade_directory
-from trialdesignbench.judge import AnthropicJudge, FakeJudge, Judge
+from trialdesignbench.judge import (
+    AnthropicJudge,
+    FakeJudge,
+    Judge,
+    OpencodeGoJudge,
+)
 
 
 def _judge(kind: str, model: str | None, votes: int, fake_verdict: str) -> Judge:
     if kind == "anthropic":
         return AnthropicJudge(model, votes=votes)
+    if kind == "opencode-go":
+        return OpencodeGoJudge(model, votes=votes)
     if kind == "fake":
         if fake_verdict not in ("pass", "fail", "unclear"):
             fail("--fake-verdict must be pass, fail, or unclear")
@@ -38,7 +45,7 @@ def grade(
         ),
     ] = None,
     judge: Annotated[
-        str, typer.Option("--judge", help="anthropic or fake.")
+        str, typer.Option("--judge", help="anthropic, opencode-go, or fake.")
     ] = "anthropic",
     judge_model: Annotated[
         str | None,
