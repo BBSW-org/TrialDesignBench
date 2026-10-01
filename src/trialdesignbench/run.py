@@ -134,13 +134,6 @@ def agent_config(
         **effort_kwargs,
     }
     agent_env = {**profile.env, **auth_env}
-    if provider == "opencode-go":
-        # Harbor has no credential mapping for this provider, so the key must
-        # travel in agents[].env (agent-phase-only). The ${} template is
-        # resolved by Harbor at launch from the host environment; the value
-        # is validated above and never written to job.yaml.
-        key_env = agents.PROVIDERS[provider].key_env
-        agent_env[key_env] = f"${{{key_env}}}"
     config: dict[str, Any] = {
         "name": request.agent,
         "model_name": request.model,

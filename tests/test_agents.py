@@ -105,9 +105,13 @@ def test_opencode_go_provider() -> None:
     assert agents.api_hosts(profile, "api", "opencode-go") == ("opencode.ai",)
     with pytest.raises(agents.AgentError, match="OPENCODE_API_KEY"):
         agents.resolve_auth(profile, "api", "opencode-go", {})
+    # Harbor cannot map this key, so it travels as a template Harbor resolves.
+    assert agents.resolve_auth(
+        profile, "api", "opencode-go", {"OPENCODE_API_KEY": "sk-test"}
+    ) == {"OPENCODE_API_KEY": "${OPENCODE_API_KEY}"}
     assert (
         agents.resolve_auth(
-            profile, "api", "opencode-go", {"OPENCODE_API_KEY": "sk-test"}
+            profile, "api", "anthropic", {"ANTHROPIC_API_KEY": "sk-test"}
         )
         == {}
     )

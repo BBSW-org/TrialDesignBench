@@ -179,12 +179,14 @@ def test_opencode_providers(
     assert json.loads(agent["env"]["OPENCODE_PERMISSION"]) == config["permission"]
     assert agent["env"]["OPENCODE_DISABLE_MODELS_FETCH"] == "1"
     assert agent["env"]["OPENCODE_MODELS_PATH"] == environment.OPENCODE_MODELS_PATH
-    if model.startswith("opencode-go/"):
-        # Harbor has no credential mapping for this provider: the key travels
-        # as a template resolved at launch, never stored.
-        assert agent["env"]["OPENCODE_API_KEY"] == "${OPENCODE_API_KEY}"
+    # Keys Harbor maps itself stay out of agents[].env; the others travel as
+    # templates Harbor resolves at launch, so no value is ever stored.
+    provider = agents.PROVIDERS[model.partition("/")[0]]
+    if provider.harbor_credential:
+        assert key not in agent["env"]
     else:
-        assert "OPENCODE_API_KEY" not in agent["env"]
+        assert agent["env"][key] == f"${{{key}}}"
+    assert "sk-test" not in p.job_yaml.read_text()
     agent_hosts, setup = task_policy(p)
     assert agent_hosts == [host]
     assert "registry.npmjs.org" in setup and host in setup

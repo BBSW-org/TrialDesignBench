@@ -49,6 +49,12 @@ class Provider:
 
     key_env: str
     host: str
+    harbor_credential: bool = True
+    """True when Harbor's model connection for the provider passes `key_env`
+    to the agent itself. False when Harbor has no mapping for it: `tdb run`
+    then adds `key_env = "${key_env}"` to `agents[].env`, which Harbor
+    resolves from the host environment at launch, so the value is still
+    never written to `job.yaml`."""
 
 
 # Exact hostnames only (no wildcards) so the policy stays portable.
@@ -56,8 +62,9 @@ PROVIDERS: Mapping[str, Provider] = {
     "anthropic": Provider("ANTHROPIC_API_KEY", "api.anthropic.com"),
     "openai": Provider("OPENAI_API_KEY", "api.openai.com"),
     "xai": Provider("XAI_API_KEY", "api.x.ai"),
-    # OpenCode Go subscription gateway; every model endpoint lives under it.
-    "opencode-go": Provider("OPENCODE_API_KEY", "opencode.ai"),
+    # OpenCode Go, a subscription gateway with its own model ids; Harbor only
+    # knows the `opencode` (Zen) provider under the same key.
+    "opencode-go": Provider("OPENCODE_API_KEY", "opencode.ai", harbor_credential=False),
 }
 
 
@@ -288,9 +295,7 @@ AGENTS: tuple[AgentProfile, ...] = (
         },
         disabled_tools=tuple(_OPENCODE_DENIED),
         note="setup hosts and both phases pass the canary and a Harbor "
-        "install-only run; confirm the agent phase with a smoke run. "
-        "opencode-go models need OPENCODE_API_KEY, which `tdb run` passes "
-        "in agents[].env because Harbor has no credential mapping for it.",
+        "install-only run; confirm the agent phase with a smoke run",
     ),
 )
 
@@ -406,20 +411,24 @@ def resolve_auth(
     provider: str,
     env: Mapping[str, str],
 ) -> dict[str, str]:
-    """Check the host credentials and return the agent env flags for them.
+    """Check the host credentials and return the agent env entries for them.
 
     Harbor's adapters read API keys and tokens from the host environment
     themselves; only the names are checked here, and values are never
-    copied into `job.yaml`.
+    copied into `job.yaml`. A provider Harbor cannot map
+    (`Provider.harbor_credential`) gets its key as a `${NAME}` template that
+    Harbor resolves at launch.
     """
     if auth == "api":
-        key = PROVIDERS[provider].key_env
-        if not env.get(key):
+        spec = PROVIDERS[provider]
+        if not env.get(spec.key_env):
             raise AgentError(
                 f"--auth api for {profile.name} with {provider} models requires "
-                f"{key} in the environment"
+                f"{spec.key_env} in the environment"
             )
-        return {}
+        if spec.harbor_credential:
+            return {}
+        return {spec.key_env: f"${{{spec.key_env}}}"}
     sub = profile.subscription
     if sub is None:
         raise AgentError(
