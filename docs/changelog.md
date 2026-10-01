@@ -6,11 +6,20 @@
 
 - Support the OpenCode Go gateway as a model provider for the `opencode`
   agent (`--model opencode-go/<id>` with `OPENCODE_API_KEY`) and as a rubric
-  judge backend: `tdb build --judge-model opencode-go/<id>` selects
-  `OpencodeGoJudge`, which grades over the gateway's Chat Completions or
-  Responses API with the same prompt, voting, and retries as
-  `AnthropicJudge`. The judge model selects the backend everywhere, and each
-  task records only that backend's key and host for the verifier (#120).
+  judge backend (#120).
+
+    `tdb build --judge-model opencode-go/<id>` selects `OpencodeGoJudge`,
+    which grades over the gateway's Chat Completions or Responses API with
+    the same prompt, voting, and retries as `AnthropicJudge`.
+
+    The judge model selects the backend everywhere, and each task records
+    only that backend's key and host for the verifier.
+
+### Maintenance
+
+- Bump the pinned Claude Code to 2.1.286 (was 2.1.285), Codex CLI to
+  0.159.3 (was 0.159.1), Grok Build to 1.0.46 (was 1.0.44), and OpenCode
+  to 1.18.34 (was 1.18.33) (#121).
 
 ## trialdesignbench 1.3.2
 
