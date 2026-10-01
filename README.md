@@ -76,8 +76,8 @@ uv run tdb build \
 ```
 
 Run an agent with the network canary, then aggregate. The agent reads its
-provider's API key (here the `ANTHROPIC_API_KEY`). The rubric judge always
-needs `ANTHROPIC_API_KEY`.
+provider's API key (here the `ANTHROPIC_API_KEY`). The rubric judge needs
+the key of its backend, `ANTHROPIC_API_KEY` by default.
 
 ```bash
 export ANTHROPIC_API_KEY=...

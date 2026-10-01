@@ -129,7 +129,8 @@ and model, and report the level with every result.
 
 Agent credentials and the [judge](judge.md) credential are separate
 concerns. Agents authenticate to their own model API as described here; the
-verifier's judge always needs `ANTHROPIC_API_KEY`, whichever agent runs.
+verifier's judge needs the key of its own backend (`ANTHROPIC_API_KEY` by
+default), whichever agent runs.
 
 Credentials are read from the environment of the shell that runs `tdb run`.
 Harbor's adapters pick them up from there, so nothing is passed on the
@@ -160,14 +161,14 @@ uv run tdb run \
 ```
 
 With `claude-code`, or `opencode` with an `anthropic/` model, the same
-`ANTHROPIC_API_KEY` serves the agent and the judge. With `opencode` and an
-`opencode-go/` model, the agent uses `OPENCODE_API_KEY`; the judge uses
-whichever key its own backend needs (see [Judge](judge.md#authentication)).
+`ANTHROPIC_API_KEY` serves the agent and the default judge (see
+[Judge](judge.md#authentication)).
 
-Harbor has no credential mapping for `opencode-go`, so `tdb run` passes
-`OPENCODE_API_KEY` in `agents[].env` (agent phase only) as
-`${OPENCODE_API_KEY}`. Harbor resolves the template from the host
-environment at launch; the value is never written to `job.yaml`.
+Harbor's adapters pass most keys to the agent themselves. Harbor has no
+credential mapping for `opencode-go`, so `tdb run` adds
+`OPENCODE_API_KEY = "${OPENCODE_API_KEY}"` to the agent's `env` in
+`job.yaml`; Harbor resolves the template from the host environment at
+launch, so the value is still never written.
 
 ### Subscriptions (`--auth subscription`)
 
@@ -245,7 +246,6 @@ Every task has two allowlists (see [Environment](environment.md#network-policy-c
 | `codex` | `subscription` | `chatgpt.com`, `auth.openai.com` | nothing | unverified |
 | `grok-build` | `api` | `api.x.ai` | `archive.ubuntu.com`, `security.ubuntu.com`, `ports.ubuntu.com`, `x.ai` | canary and Harbor install-only run pass; needs a smoke run |
 | `opencode` | `api` | the provider's API host | `raw.githubusercontent.com`, `github.com`, `nodejs.org`, `registry.npmjs.org` | canary and Harbor install-only run pass; needs a smoke run |
-| `opencode` (`opencode-go/` models) | `api` | `opencode.ai` | same as `opencode` | unverified: needs a smoke run with `OPENCODE_API_KEY` |
 
 Entries not verified by a smoke run make `tdb run` print a warning. Confirm
 them with `tdb env check --canary --agent <name> [--provider <provider>]` and

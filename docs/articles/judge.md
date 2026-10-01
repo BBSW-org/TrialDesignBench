@@ -11,9 +11,15 @@ are scored.
 
 | Setting | Default | Inside Harbor (`tdb run`, `tdb regrade`) | Standalone (`tdb grade`) |
 | --- | --- | --- | --- |
-| Judge | `anthropic` (`AnthropicJudge`) | the backend matching the built judge model (baked into `test.sh` as `--judge`) | `--judge anthropic\|opencode-go\|fake` |
-| Model | `claude-opus-5-5` | fixed per task at build time: `tdb build --judge-model ID` writes `TDB_JUDGE_MODEL` into `[verifier.env]`; an `opencode-go/` prefix selects the OpenCode Go judge | `--judge-model ID`, else `TDB_JUDGE_MODEL`, else the default |
+| Judge | `anthropic` (`AnthropicJudge`) | the backend of the built judge model | `--judge anthropic\|opencode-go\|fake` (default: the backend of the model) |
+| Model | `claude-opus-5-5` | fixed per task at build time: `tdb build --judge-model ID` writes `TDB_JUDGE_MODEL` into `[verifier.env]` | `--judge-model ID`, else `TDB_JUDGE_MODEL`, else the backend's default |
 | Votes | 1 | 1 | `--judge-votes K` (majority of K calls; ties are `unclear`) |
+
+The judge model selects the backend: a plain Anthropic model id, or
+`opencode-go/<id>` for the OpenCode Go gateway. Any other prefix is refused
+at build time. The build writes the backend's key variable and API host into
+the task (see [Authentication](#authentication) and [Network](#network)), so
+nothing else changes between backends.
 
 The judge model is recorded in `tdb-build.json`, `tdb-run.json`, and every
 `grade.json`, together with the judge prompt hash and the SDK version. To
@@ -29,12 +35,18 @@ These models use the API's default sampling behavior; other models receive
 criteria `error`, which zeroes the trial's reward.
 
 `OpencodeGoJudge` grades with the same prompt, response contract, voting, and
-retry semantics over the OpenCode Go gateway's Responses API with structured
-JSON output. It uses the standard library only, so the `judge` extra is not
-needed. The gateway requires a stable `x-opencode-session` header per
-conversation and rejects generic HTTP-library user agents, so each judge
-sends one generated session id and identifies as
-`trialdesignbench/<version>`.
+retries over the [OpenCode Go](https://opencode.ai/docs/go) gateway, an
+OpenAI-compatible API, with structured JSON output. It uses the standard
+library only, so the `judge` extra is not needed. Judge models are
+`opencode-go/<id>` for the ids in the gateway's model list. The gateway
+serves each model over exactly one protocol, Chat Completions for most and
+the Responses API for the GPT, Grok, and Muse Spark families; the judge
+starts with Chat Completions and switches once when the gateway answers
+`ModelProtocolUnsupported`. Each question's judge log records the protocol
+used. No sampling parameters are sent. Every request carries a stable
+`x-opencode-session` header, which the gateway requires, and a
+`trialdesignbench/<version>` user agent, because generic HTTP-library user
+agents are blocked.
 
 ## Authentication
 
@@ -84,9 +96,8 @@ The verifier container has its own allowlist with only the judge API host
 judge model; plus PyPI hosts with `tdb build --grader-source pypi`).
 Only the judge key and `TDB_JUDGE_MODEL` are passed to it, so a custom
 `ANTHROPIC_BASE_URL` does not apply inside Harbor. Standalone `tdb grade`
-uses the Anthropic SDK's defaults, which honor `ANTHROPIC_BASE_URL`, and
-`OPENCODE_GO_BASE_URL` for the OpenCode Go gateway (default
-`https://opencode.ai/zen/go/v1`).
+uses the Anthropic SDK's defaults, which honor `ANTHROPIC_BASE_URL`; the
+OpenCode Go judge always calls `https://opencode.ai/zen/go/v1`.
 
 ## Dry runs without a key
 
