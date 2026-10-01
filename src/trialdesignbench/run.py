@@ -38,7 +38,7 @@ from trialdesignbench.build import (
     ENVIRONMENT_HOSTS_MARKER,
 )
 from trialdesignbench.canary import write_canary_task
-from trialdesignbench.judge import judge_api_host, judge_key_env, judge_kind_for_model
+from trialdesignbench.judge import DEFAULT_JUDGE_MODEL, judge_backend
 from trialdesignbench.provenance import (
     digest_tree,
     docker_image_digest,
@@ -316,10 +316,9 @@ def plan_run(
     build = read_build_manifest(tasks_dir)
     if n_concurrent is None:
         n_concurrent = 1 if auth == "subscription" else 2
-    judge_kind = judge_kind_for_model(build.get("judge_model"))
-    judge_key = judge_key_env(judge_kind)
-    if not env.get(judge_key):
-        raise RunError(f"the rubric judge in the verifier requires {judge_key}")
+    judge = judge_backend(build.get("judge_model") or DEFAULT_JUDGE_MODEL)
+    if not env.get(judge.key_env):
+        raise RunError(f"the rubric judge in the verifier requires {judge.key_env}")
     configs, specs = [], []
     for req in requests:
         agent_cfg, spec = agent_config(req, auth=auth, skills=skills, env=env)
@@ -415,7 +414,7 @@ def plan_run(
             environment_network_mode="allowlist",
             environment_allowed_hosts=tuple(environment_hosts),
             verifier_network_mode="allowlist",
-            verifier_allowed_hosts=(judge_api_host(judge_kind),),
+            verifier_allowed_hosts=(judge.api_host,),
             disabled_tools={
                 s.agent: agents.get_profile(s.agent).disabled_tools for s in specs
             },

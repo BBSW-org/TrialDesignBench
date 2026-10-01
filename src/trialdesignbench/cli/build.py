@@ -10,7 +10,7 @@ from trialdesignbench import environment
 from trialdesignbench.build import BuildOptions, GraderSource, build_tasks
 from trialdesignbench.cli._console import console, fail, warn
 from trialdesignbench.dataset import DatasetError
-from trialdesignbench.judge import DEFAULT_JUDGE_MODEL
+from trialdesignbench.judge import DEFAULT_JUDGE_MODEL, judge_backend
 
 
 def build(
@@ -49,8 +49,7 @@ def build(
         str,
         typer.Option(
             "--judge-model",
-            help="Model for the rubric judge "
-            "(opencode-go/ prefix selects the OpenCode Go judge).",
+            help="Rubric judge model: an Anthropic id or opencode-go/<id>.",
         ),
     ] = DEFAULT_JUDGE_MODEL,
     agent_timeout: Annotated[
@@ -73,6 +72,10 @@ def build(
     if grader_source not in ("image", "pypi", "editable"):
         fail(f"unknown --grader-source {grader_source!r}")
     source: GraderSource = grader_source  # type: ignore[assignment]
+    try:
+        judge_backend(judge_model)
+    except ValueError as exc:
+        fail(str(exc))
     options = BuildOptions(
         image=image or environment.default_image(),
         dockerfile=dockerfile,

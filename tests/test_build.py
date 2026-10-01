@@ -205,21 +205,24 @@ def test_opencode_go_judge_verifier(dataset_dir: Path, tmp_path: Path) -> None:
         ),
     )
     config = tomllib.loads((out / FIXTURE_TASK_ID / "task.toml").read_text())
-    assert config["verifier"]["env"]["TDB_JUDGE_MODEL"] == (
-        "opencode-go/muse-spark-1.3-contributor"
-    )
-    assert config["verifier"]["env"]["OPENCODE_API_KEY"] == "${OPENCODE_API_KEY}"
-    assert "ANTHROPIC_API_KEY" not in config["verifier"]["env"]
+    # The verifier gets exactly the key and host of the judge model's backend.
+    assert config["verifier"]["env"] == {
+        "TDB_JUDGE_MODEL": "opencode-go/muse-spark-1.3-contributor",
+        "OPENCODE_API_KEY": "${OPENCODE_API_KEY}",
+    }
     assert config["verifier"]["environment"]["allowed_hosts"] == ["opencode.ai"]
-    test_sh = (out / FIXTURE_TASK_ID / "tests" / "test.sh").read_text()
-    assert "--judge opencode-go" in test_sh
+    # test.sh does not depend on the judge: the grader reads the backend from
+    # TDB_JUDGE_MODEL, so tasks differ only in [verifier.env] and the allowlist.
+    default = tmp_path / "default"
+    build_tasks(dataset_dir, default, options=BuildOptions(image=IMAGE))
+    assert (out / FIXTURE_TASK_ID / "tests" / "test.sh").read_text() == (
+        default / FIXTURE_TASK_ID / "tests" / "test.sh"
+    ).read_text()
     info = json.loads((out / BUILD_MANIFEST).read_text())
-    assert info["judge"] == "opencode-go"
     assert info["judge_model"] == "opencode-go/muse-spark-1.3-contributor"
-
-
-def test_default_judge_is_anthropic(tasks_dir: Path) -> None:
-    test_sh = (tasks_dir / FIXTURE_TASK_ID / "tests" / "test.sh").read_text()
-    assert "--judge anthropic" in test_sh
-    info = json.loads((tasks_dir / BUILD_MANIFEST).read_text())
-    assert info["judge"] == "anthropic"
+    with pytest.raises(ValueError, match="no known backend"):
+        build_tasks(
+            dataset_dir,
+            tmp_path / "bad",
+            options=BuildOptions(image=IMAGE, judge_model="openai/gpt-6-astra"),
+        )

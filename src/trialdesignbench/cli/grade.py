@@ -10,24 +10,20 @@ from rich.table import Table
 from trialdesignbench.cli._console import console, fail
 from trialdesignbench.dataset import DatasetError
 from trialdesignbench.grade import DEFAULT_RSCRIPT_TIMEOUT_SEC, grade_directory
-from trialdesignbench.judge import (
-    AnthropicJudge,
-    FakeJudge,
-    Judge,
-    OpencodeGoJudge,
-)
+from trialdesignbench.judge import JUDGE_BACKENDS, FakeJudge, Judge, make_judge
+
+_BACKENDS = ", ".join(JUDGE_BACKENDS)
 
 
-def _judge(kind: str, model: str | None, votes: int, fake_verdict: str) -> Judge:
-    if kind == "anthropic":
-        return AnthropicJudge(model, votes=votes)
-    if kind == "opencode-go":
-        return OpencodeGoJudge(model, votes=votes)
+def _judge(kind: str | None, model: str | None, votes: int, fake_verdict: str) -> Judge:
     if kind == "fake":
         if fake_verdict not in ("pass", "fail", "unclear"):
             fail("--fake-verdict must be pass, fail, or unclear")
         return FakeJudge(default=fake_verdict)  # type: ignore[arg-type]
-    fail(f"unknown --judge {kind!r}")
+    try:
+        return make_judge(model, backend=kind, votes=votes)
+    except ValueError as exc:
+        fail(str(exc))
 
 
 def grade(
@@ -45,11 +41,19 @@ def grade(
         ),
     ] = None,
     judge: Annotated[
-        str, typer.Option("--judge", help="anthropic, opencode-go, or fake.")
-    ] = "anthropic",
+        str | None,
+        typer.Option(
+            "--judge",
+            help=f"{_BACKENDS}, or fake (default: the judge-model's backend).",
+        ),
+    ] = None,
     judge_model: Annotated[
         str | None,
-        typer.Option("--judge-model", help="Judge model (default: $TDB_JUDGE_MODEL)."),
+        typer.Option(
+            "--judge-model",
+            help="Judge model: an Anthropic id or opencode-go/<id> "
+            "(default: $TDB_JUDGE_MODEL).",
+        ),
     ] = None,
     judge_votes: Annotated[
         int, typer.Option("--judge-votes", min=1, help="Majority vote over k calls.")
