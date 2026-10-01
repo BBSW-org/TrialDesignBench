@@ -295,7 +295,8 @@ AGENTS: tuple[AgentProfile, ...] = (
         },
         disabled_tools=tuple(_OPENCODE_DENIED),
         note="setup hosts and both phases pass the canary and a Harbor "
-        "install-only run; confirm the agent phase with a smoke run",
+        "install-only run, and a smoke run with an opencode-go model passes; "
+        "confirm the agent phase of the other providers with a smoke run",
     ),
 )
 

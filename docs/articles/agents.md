@@ -245,14 +245,17 @@ Every task has two allowlists (see [Environment](environment.md#network-policy-c
 | `codex` | `api` | `api.openai.com` | nothing | verified by table only |
 | `codex` | `subscription` | `chatgpt.com`, `auth.openai.com` | nothing | unverified |
 | `grok-build` | `api` | `api.x.ai` | `archive.ubuntu.com`, `security.ubuntu.com`, `ports.ubuntu.com`, `x.ai` | canary and Harbor install-only run pass; needs a smoke run |
-| `opencode` | `api` | the provider's API host | `raw.githubusercontent.com`, `github.com`, `nodejs.org`, `registry.npmjs.org` | canary and Harbor install-only run pass; needs a smoke run |
+| `opencode` | `api` | the provider's API host | `raw.githubusercontent.com`, `github.com`, `nodejs.org`, `registry.npmjs.org` | canary, Harbor install-only run, and a smoke run with an `opencode-go/` model pass; other providers need a smoke run |
 
 Entries not verified by a smoke run make `tdb run` print a warning. Confirm
 them with `tdb env check --canary --agent <name> [--provider <provider>]` and
 a smoke run before relying on them. For grok-build and opencode, the canary
 (both phases) and a Harbor `--install-only` run (the real install under the
-setup allowlist, amd64) pass; a run with a real API key would confirm that
-the CLIs need no other host during `agent.run()`. grok-build's setup reaches
+setup allowlist, amd64) pass; for opencode, a smoke run with an
+`opencode-go/` model also completed a task and its grading with only
+`opencode.ai` allowed. A run with a real API key for the other providers
+would confirm that the CLIs need no other host during `agent.run()`.
+grok-build's setup reaches
 the Ubuntu mirrors because Harbor's adapter always runs `apt-get install
 ca-certificates`.
 
