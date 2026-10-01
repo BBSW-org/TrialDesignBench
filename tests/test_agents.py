@@ -97,6 +97,28 @@ def test_registry_names() -> None:
         agents.get_profile("gemini-cli")
 
 
+def test_opencode_go_provider() -> None:
+    profile = agents.get_profile("opencode")
+    assert agents.model_provider(profile, "opencode-go/muse-spark-1.3-contributor") == (
+        "opencode-go"
+    )
+    assert agents.api_hosts(profile, "api", "opencode-go") == ("opencode.ai",)
+    with pytest.raises(agents.AgentError, match="OPENCODE_API_KEY"):
+        agents.resolve_auth(profile, "api", "opencode-go", {})
+    # Harbor cannot map this key, so it travels as a template Harbor resolves.
+    assert agents.resolve_auth(
+        profile, "api", "opencode-go", {"OPENCODE_API_KEY": "sk-test"}
+    ) == {"OPENCODE_API_KEY": "${OPENCODE_API_KEY}"}
+    assert (
+        agents.resolve_auth(
+            profile, "api", "anthropic", {"ANTHROPIC_API_KEY": "sk-test"}
+        )
+        == {}
+    )
+    with pytest.raises(agents.AgentError, match="cannot use 'opencode-go'"):
+        agents.model_provider(agents.get_profile("codex"), "opencode-go/m")
+
+
 def test_grok_policy_file_matches_profile() -> None:
     policy = tomllib.loads(
         (ROOT / "src/trialdesignbench/environment/grok-requirements.toml").read_text()

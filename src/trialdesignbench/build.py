@@ -35,7 +35,7 @@ from trialdesignbench.dataset import (
     DatasetError,
     load_dataset,
 )
-from trialdesignbench.judge import DEFAULT_JUDGE_MODEL
+from trialdesignbench.judge import DEFAULT_JUDGE_MODEL, judge_backend
 from trialdesignbench.provenance import (
     digest_tree,
     package_version,
@@ -49,7 +49,6 @@ HARBOR_TASK_SCHEMA = "1.4"
 BUILD_MANIFEST = "tdb-build.json"
 AGENT_HOSTS_MARKER = "# tdb:agent-allowed-hosts"
 ENVIRONMENT_HOSTS_MARKER = "# tdb:environment-allowed-hosts"
-JUDGE_API_HOST = "api.anthropic.com"
 PYPI_HOSTS = ("pypi.org", "files.pythonhosted.org")
 ARTIFACTS = ("/app/output.json", "/app/output.R", "/logs/agent/trajectory.json")
 TDB_BIN = "/opt/tdb/venv/bin/tdb"
@@ -190,7 +189,8 @@ def render_task_toml(
         "grader_source": options.grader_source,
         "verifier_base_image": None if options.dockerfile else options.image,
     }
-    verifier_hosts = [JUDGE_API_HOST]
+    judge = judge_backend(options.judge_model)
+    verifier_hosts = [judge.api_host]
     if options.grader_source == "pypi":
         verifier_hosts += list(PYPI_HOSTS)
     env: dict[str, Any] = {
@@ -244,7 +244,7 @@ def render_task_toml(
             "verifier.env",
             {
                 "TDB_JUDGE_MODEL": options.judge_model,
-                "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+                judge.key_env: f"${{{judge.key_env}}}",
             },
         ),
         _toml_table(

@@ -18,10 +18,11 @@ refuses any other agent.
 | `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.285 | in the image | `anthropic` | `api`, `subscription` |
 | `codex` | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) | 0.159.1 | in the image | `openai` | `api`, `subscription` |
 | `grok-build` | [Grok Build](https://docs.x.ai/build/overview) | 1.0.44 | by Harbor at setup | `xai` | `api` |
-| `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.18.33 | by Harbor at setup | `anthropic`, `openai`, `xai` | `api` |
+| `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.18.33 | by Harbor at setup | `anthropic`, `openai`, `xai`, `opencode-go` | `api` |
 
 - `--model` is always `<provider>/<model>`, for example
-  `anthropic/claude-opus-5-5`, `openai/gpt-6-astra`, or `xai/grok-4.7`.
+  `anthropic/claude-opus-5-5`, `openai/gpt-6-astra`, `xai/grok-4.7`, or
+  `opencode-go/muse-spark-1.3-contributor`.
   The provider decides which API key is required and which API host is
   allowlisted, so a model from any other provider is refused.
 - The pinned version is passed to Harbor as the agent `version`;
@@ -128,7 +129,8 @@ and model, and report the level with every result.
 
 Agent credentials and the [judge](judge.md) credential are separate
 concerns. Agents authenticate to their own model API as described here; the
-verifier's judge always needs `ANTHROPIC_API_KEY`, whichever agent runs.
+verifier's judge needs the key of its own backend (`ANTHROPIC_API_KEY` by
+default), whichever agent runs.
 
 Credentials are read from the environment of the shell that runs `tdb run`.
 Harbor's adapters pick them up from there, so nothing is passed on the
@@ -145,11 +147,13 @@ Export the key for the provider of each `--model`:
 | `anthropic` | `ANTHROPIC_API_KEY` | `api.anthropic.com` | [Claude Console](https://platform.claude.com/) |
 | `openai` | `OPENAI_API_KEY` | `api.openai.com` | [OpenAI Platform](https://platform.openai.com/api-keys) |
 | `xai` | `XAI_API_KEY` | `api.x.ai` | [xAI Console](https://console.x.ai/home) |
+| `opencode-go` | `OPENCODE_API_KEY` | `opencode.ai` | [OpenCode Console](https://opencode.ai/auth) (Go subscription) |
 
 ```bash
 export ANTHROPIC_API_KEY=... # agent (anthropic/ models) and the judge
 export OPENAI_API_KEY=...    # codex, or opencode with openai/ models
 export XAI_API_KEY=...       # grok-build, or opencode with xai/ models
+export OPENCODE_API_KEY=...  # opencode with opencode-go/ models
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent codex \
@@ -157,7 +161,14 @@ uv run tdb run \
 ```
 
 With `claude-code`, or `opencode` with an `anthropic/` model, the same
-`ANTHROPIC_API_KEY` serves the agent and the judge.
+`ANTHROPIC_API_KEY` serves the agent and the default judge (see
+[Judge](judge.md#authentication)).
+
+Harbor's adapters pass most keys to the agent themselves. Harbor has no
+credential mapping for `opencode-go`, so `tdb run` adds
+`OPENCODE_API_KEY = "${OPENCODE_API_KEY}"` to the agent's `env` in
+`job.yaml`; Harbor resolves the template from the host environment at
+launch, so the value is still never written.
 
 ### Subscriptions (`--auth subscription`)
 
@@ -234,14 +245,17 @@ Every task has two allowlists (see [Environment](environment.md#network-policy-c
 | `codex` | `api` | `api.openai.com` | nothing | verified by table only |
 | `codex` | `subscription` | `chatgpt.com`, `auth.openai.com` | nothing | unverified |
 | `grok-build` | `api` | `api.x.ai` | `archive.ubuntu.com`, `security.ubuntu.com`, `ports.ubuntu.com`, `x.ai` | canary and Harbor install-only run pass; needs a smoke run |
-| `opencode` | `api` | the provider's API host | `raw.githubusercontent.com`, `github.com`, `nodejs.org`, `registry.npmjs.org` | canary and Harbor install-only run pass; needs a smoke run |
+| `opencode` | `api` | the provider's API host | `raw.githubusercontent.com`, `github.com`, `nodejs.org`, `registry.npmjs.org` | canary, Harbor install-only run, and a smoke run with an `opencode-go/` model pass; other providers need a smoke run |
 
 Entries not verified by a smoke run make `tdb run` print a warning. Confirm
 them with `tdb env check --canary --agent <name> [--provider <provider>]` and
 a smoke run before relying on them. For grok-build and opencode, the canary
 (both phases) and a Harbor `--install-only` run (the real install under the
-setup allowlist, amd64) pass; a run with a real API key would confirm that
-the CLIs need no other host during `agent.run()`. grok-build's setup reaches
+setup allowlist, amd64) pass; for opencode, a smoke run with an
+`opencode-go/` model also completed a task and its grading with only
+`opencode.ai` allowed. A run with a real API key for the other providers
+would confirm that the CLIs need no other host during `agent.run()`.
+grok-build's setup reaches
 the Ubuntu mirrors because Harbor's adapter always runs `apt-get install
 ca-certificates`.
 

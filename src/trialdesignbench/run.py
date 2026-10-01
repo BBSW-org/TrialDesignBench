@@ -36,9 +36,9 @@ from trialdesignbench.build import (
     AGENT_HOSTS_MARKER,
     BUILD_MANIFEST,
     ENVIRONMENT_HOSTS_MARKER,
-    JUDGE_API_HOST,
 )
 from trialdesignbench.canary import write_canary_task
+from trialdesignbench.judge import DEFAULT_JUDGE_MODEL, judge_backend
 from trialdesignbench.provenance import (
     digest_tree,
     docker_image_digest,
@@ -49,8 +49,6 @@ from trialdesignbench.provenance import (
     utc_now,
 )
 from trialdesignbench.schema import AgentSpec, NetworkPolicy, RunManifest
-
-JUDGE_KEY_ENV = "ANTHROPIC_API_KEY"
 
 
 class RunError(RuntimeError):
@@ -311,8 +309,9 @@ def plan_run(
     build = read_build_manifest(tasks_dir)
     if n_concurrent is None:
         n_concurrent = 1 if auth == "subscription" else 2
-    if not env.get(JUDGE_KEY_ENV):
-        raise RunError(f"the rubric judge in the verifier requires {JUDGE_KEY_ENV}")
+    judge = judge_backend(build.get("judge_model") or DEFAULT_JUDGE_MODEL)
+    if not env.get(judge.key_env):
+        raise RunError(f"the rubric judge in the verifier requires {judge.key_env}")
     configs, specs = [], []
     for req in requests:
         agent_cfg, spec = agent_config(req, auth=auth, skills=skills, env=env)
@@ -408,7 +407,7 @@ def plan_run(
             environment_network_mode="allowlist",
             environment_allowed_hosts=tuple(environment_hosts),
             verifier_network_mode="allowlist",
-            verifier_allowed_hosts=(JUDGE_API_HOST,),
+            verifier_allowed_hosts=(judge.api_host,),
             disabled_tools={
                 s.agent: agents.get_profile(s.agent).disabled_tools for s in specs
             },

@@ -45,7 +45,8 @@ src/trialdesignbench/
   dataset.py       intake JSON -> canonical dataset; load/check/attach-document
   build.py         canonical dataset -> Harbor task directories
   environment/     Dockerfile, install scripts, image pins, build/check commands
-  judge.py         Judge protocol, AnthropicJudge (lazy `anthropic` import), FakeJudge
+  judge.py         Judge protocol, JudgeBackend registry, AnthropicJudge (lazy
+                   `anthropic` import), OpencodeGoJudge (stdlib), FakeJudge
   grade.py         deterministic checks + rubric judging + outputs (delicate)
   scoring.py       versioned scoring rules, pure functions
   agents.py        supported agents: providers, credentials, hosts, closed-book settings
@@ -88,9 +89,8 @@ src/trialdesignbench/
   add MCP servers, or allow an agent version different from the pin.
 - Changing scoring rules requires bumping `SCORING_VERSION`. Changing the judge
   prompt changes `judge_prompt_sha256()`, which is recorded in every grade.
-- Do not log API keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `XAI_API_KEY`)
-  or OAuth tokens; manifests
-  record variable names only.
+- Do not log API keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `XAI_API_KEY`,
+  `OPENCODE_API_KEY`) or OAuth tokens; manifests record variable names only.
 
 ## Development Environment
 

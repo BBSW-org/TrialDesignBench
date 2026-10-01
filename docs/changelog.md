@@ -1,5 +1,17 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### New features
+
+- Support the OpenCode Go gateway as a model provider for the `opencode`
+  agent (`--model opencode-go/<id>` with `OPENCODE_API_KEY`) and as a rubric
+  judge backend: `tdb build --judge-model opencode-go/<id>` selects
+  `OpencodeGoJudge`, which grades over the gateway's Chat Completions or
+  Responses API with the same prompt, voting, and retries as
+  `AnthropicJudge`. The judge model selects the backend everywhere, and each
+  task records only that backend's key and host for the verifier (#120).
+
 ## trialdesignbench 1.3.2
 
 ### Maintenance

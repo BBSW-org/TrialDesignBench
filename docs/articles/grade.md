@@ -6,7 +6,7 @@ uv run tdb grade \
   --rubrics rubrics.json \
   --out <dir> \
   [--trajectory trajectory.json] \
-  [--judge anthropic|fake] \
+  [--judge anthropic|opencode-go|fake] \
   [--judge-model ID] \
   [--judge-votes K]
 ```
@@ -66,8 +66,9 @@ a quoted evidence excerpt.
 
 The default `AnthropicJudge` uses the Anthropic Messages API with structured
 JSON output (`output_config.format`), model `claude-opus-5-5` unless
-`--judge-model` or `TDB_JUDGE_MODEL` says otherwise. Model choice, sampling settings,
-credentials (`ANTHROPIC_API_KEY`), and network access are covered in
+`--judge-model` or `TDB_JUDGE_MODEL` says otherwise; an `opencode-go/<id>`
+model selects `OpencodeGoJudge` instead. Model choice, sampling settings,
+credentials, and network access are covered in
 [Judge](judge.md). Transient errors (rate limits,
 5xx, truncated or malformed responses) are retried with backoff. After the
 retries, every criterion of that question is marked `error`. `--judge-votes K`

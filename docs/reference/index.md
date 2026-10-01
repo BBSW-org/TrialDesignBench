@@ -9,7 +9,7 @@ Harbor.
 | [`dataset`](dataset.md) | Intake import, canonical dataset, validation |
 | [`build`](build.md) | Canonical dataset to Harbor task directories |
 | [`environment`](environment.md) | Shared image pins, Dockerfile context, build/check commands |
-| [`judge`](judge.md) | Judge protocol, `AnthropicJudge`, `FakeJudge` |
+| [`judge`](judge.md) | Judge protocol and backends: `AnthropicJudge`, `OpencodeGoJudge`, `FakeJudge` |
 | [`grade`](grade.md) | Deterministic checks, rubric judging, grade outputs |
 | [`scoring`](scoring.md) | Versioned scoring rules |
 | [`agents`](agents.md) | Supported agents: providers, credentials, hosts, closed-book settings |
