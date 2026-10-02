@@ -6,6 +6,8 @@
 
 - Report the latest uv version alongside agent releases in
   `scripts/latest_agent_versions.py` (#125).
+- Bump the pinned Claude Code to 2.1.287 (was 2.1.286), Codex CLI to
+  0.160.0 (was 0.159.3), and uv to 0.12.22 (was 0.12.21) (#126).
 
 ## trialdesignbench 1.4.0
 
