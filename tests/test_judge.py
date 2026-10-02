@@ -233,7 +233,7 @@ def test_judge_backend_from_model(monkeypatch: pytest.MonkeyPatch) -> None:
     for name, backend in JUDGE_BACKENDS.items():
         assert judge_backend(f"{name}/some-model") is backend
         assert backend.model_id(f"{name}/some/model") == "some/model"
-    go = judge_backend("opencode-go/muse-spark-1.3-contributor")
+    go = judge_backend("opencode-go/grok-4.7")
     assert (go.name, go.key_env, go.api_host) == (
         "opencode-go",
         "OPENCODE_API_KEY",
@@ -310,7 +310,7 @@ def _chat_payload(text: str, finish_reason: str = "stop") -> dict[str, Any]:
 def _responses_payload(text: str, status: str = "completed") -> dict[str, Any]:
     return {
         "id": "resp-test",
-        "model": "muse-spark-1.3-contributor",
+        "model": "grok-4.7",
         "status": status,
         "incomplete_details": None if status == "completed" else {"reason": status},
         "output": [

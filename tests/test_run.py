@@ -163,7 +163,7 @@ def test_grok_build_two_phase_policy(tasks_dir: Path, tmp_path: Path) -> None:
         ("openai/gpt-6-astra", "api.openai.com", "OPENAI_API_KEY"),
         ("xai/grok-4.7", "api.x.ai", "XAI_API_KEY"),
         (
-            "opencode-go/muse-spark-1.3-contributor",
+            "opencode-go/grok-4.7",
             "opencode.ai",
             "OPENCODE_API_KEY",
         ),
@@ -392,14 +392,14 @@ def go_tasks_dir(dataset_dir: Path, tmp_path: Path) -> Path:
         out,
         options=BuildOptions(
             image="tdb-env:test",
-            judge_model="opencode-go/muse-spark-1.3-contributor",
+            judge_model="opencode-go/grok-4.7",
         ),
     )
     return out
 
 
 def test_opencode_go_judge_run(go_tasks_dir: Path, tmp_path: Path) -> None:
-    req = [AgentRequest("opencode", "opencode-go/muse-spark-1.3-contributor")]
+    req = [AgentRequest("opencode", "opencode-go/grok-4.7")]
     p = plan(go_tasks_dir, tmp_path, req)
     assert p.manifest.network_policy.verifier_allowed_hosts == ("opencode.ai",)
     agent = load_job(p)["agents"][0]

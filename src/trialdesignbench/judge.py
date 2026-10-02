@@ -1004,11 +1004,16 @@ class OpencodeGoJudge(ApiJudge):
     `x-opencode-session` header, which the gateway requires, and a
     `trialdesignbench/<version>` user agent, because generic HTTP-library
     user agents are blocked.
+
+    Some Go models train on request data (for example
+    `muse-spark-1.3-contributor`), and the gateway refuses them with HTTP 400
+    unless a workspace privacy setting allows such endpoints. A judge sends
+    the hidden rubrics, so that setting must stay off; the default
+    `opencode-go/grok-4.7` is served without it, and a refused model fails
+    every criterion of the question loudly instead of leaking rubrics.
     """
 
-    backend = JudgeBackend(
-        PROVIDERS["opencode-go"], "opencode-go/muse-spark-1.3-contributor"
-    )
+    backend = JudgeBackend(PROVIDERS["opencode-go"], "opencode-go/grok-4.7")
     base_url = "https://opencode.ai/zen/go/v1"
 
     def __init__(

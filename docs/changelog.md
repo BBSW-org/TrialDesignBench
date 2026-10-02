@@ -35,6 +35,11 @@
   key and host. Providers move to the new `trialdesignbench.providers`
   module, shared by agents and judges, and tests enforce the rule, the
   extras, and the Judge article (#127).
+- Change the default OpenCode Go judge model to `opencode-go/grok-4.7`. The
+  previous default, `muse-spark-1.3-contributor`, trains on request data,
+  and the gateway refuses it unless a workspace privacy setting allows such
+  models, which a judge that sees hidden rubrics must not rely on. The Judge
+  and Agents articles document the caveat (#127).
 
 ### Maintenance
 

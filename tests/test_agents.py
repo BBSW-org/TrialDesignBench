@@ -99,9 +99,7 @@ def test_registry_names() -> None:
 
 def test_opencode_go_provider() -> None:
     profile = agents.get_profile("opencode")
-    assert agents.model_provider(profile, "opencode-go/muse-spark-1.3-contributor") == (
-        "opencode-go"
-    )
+    assert agents.model_provider(profile, "opencode-go/grok-4.7") == ("opencode-go")
     assert agents.api_hosts(profile, "api", "opencode-go") == ("opencode.ai",)
     with pytest.raises(agents.AgentError, match="OPENCODE_API_KEY"):
         agents.resolve_auth(profile, "api", "opencode-go", {})
