@@ -103,16 +103,16 @@ used. No sampling parameters are sent. Every request carries a stable
 `trialdesignbench/<version>` user agent, because generic HTTP-library user
 agents are blocked.
 
-!!! warning "Go models that train on request data"
-    Some Go models, for example `muse-spark-1.3-contributor`, train on
-    request data. The gateway refuses them with HTTP 400 (`This Go model
-    trains on request data`) unless the workspace's privacy settings allow
-    such endpoints. The judge sends the hidden rubrics, so leave that setting
-    off and use a model the gateway serves without it; the default
-    `opencode-go/grok-4.7` and `opencode-go/kimi-k3` are such models. A
-    refused model marks every criterion of the question `error`, which
-    zeroes the trial, so a wrong choice fails loudly rather than leaking
-    rubrics.
+!!! warning "OpenCode Go models that train on request data"
+
+    Some OpenCode Go models, for example `muse-spark-1.3-contributor`,
+    train on request data. The gateway refuses them with HTTP 400
+    (`This Go model trains on request data`) unless the workspace's privacy
+    settings allow such endpoints. The judge sends the hidden rubrics,
+    so leave that setting off and use a model the gateway serves without it;
+    the default `opencode-go/grok-4.7` and `opencode-go/kimi-k3` are such models.
+    A refused model marks every criterion of the question `error`, which zeroes
+    the trial, so a wrong choice fails loudly rather than leaking rubrics.
 
 ## Authentication
 
@@ -121,9 +121,9 @@ The judge needs the API key of its provider:
 | Judge | Key | From |
 | --- | --- | --- |
 | `anthropic` | `ANTHROPIC_API_KEY` | [Claude Console](https://platform.claude.com/) |
-| `openai` | `OPENAI_API_KEY` | [OpenAI Platform](https://platform.openai.com/api-keys) |
-| `xai` | `XAI_API_KEY` | [xAI Console](https://console.x.ai/home) |
-| `opencode-go` | `OPENCODE_API_KEY` | [OpenCode Console](https://opencode.ai/auth) (Go subscription) |
+| `openai` | `OPENAI_API_KEY` | [OpenAI Platform](https://platform.openai.com/) |
+| `xai` | `XAI_API_KEY` | [xAI Console](https://console.x.ai/) |
+| `opencode-go` | `OPENCODE_API_KEY` | [OpenCode Console](https://opencode.ai/console) (Go subscription) |
 
 Agent subscription logins (`CLAUDE_CODE_OAUTH_TOKEN`, Codex's `auth.json`)
 cannot be used for the judge.
