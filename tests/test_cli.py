@@ -14,7 +14,7 @@ runner = CliRunner()
 
 def test_version() -> None:
     result = runner.invoke(app, ["--version"])
-    assert result.exit_code == 0 and result.stdout.strip() == "1.4.0"
+    assert result.exit_code == 0 and result.stdout.strip() == "1.5.0"
 
 
 def test_dataset_import_and_build(tmp_path: Path, documents_dir: Path) -> None:
