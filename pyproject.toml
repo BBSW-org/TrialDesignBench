@@ -1,6 +1,6 @@
 [project]
 name = "trialdesignbench"
-version = "1.4.0"
+version = "1.5.0"
 description = "Evaluate whether AI agents can create efficient, reproducible, and safe clinical trial design"
 authors = [{ name = "Nan Xiao", email = "me@nanx.me" }]
 dependencies = ["pydantic>=2.13.4", "rich>=15.0.0", "typer>=0.25.1"]
