@@ -45,8 +45,11 @@ src/trialdesignbench/
   dataset.py       intake JSON -> canonical dataset; load/check/attach-document
   build.py         canonical dataset -> Harbor task directories
   environment/     Dockerfile, install scripts, image pins, build/check commands
-  judge.py         Judge protocol, JudgeBackend registry, AnthropicJudge (lazy
-                   `anthropic` import), OpencodeGoJudge (stdlib), FakeJudge
+  providers.py     model providers (name, key variable, API host) shared by
+                   agents and judges; `<provider>/` prefix of every model string
+  judge.py         Judge protocol, JudgeBackend, one ApiJudge per provider
+                   (AnthropicJudge, OpenaiJudge, XaiJudge with lazily imported
+                   official SDKs; OpencodeGoJudge with the stdlib), FakeJudge
   grade.py         deterministic checks + rubric judging + outputs (delicate)
   scoring.py       versioned scoring rules, pure functions
   agents.py        supported agents: providers, credentials, hosts, closed-book settings
@@ -89,6 +92,13 @@ src/trialdesignbench/
   add MCP servers, or allow an agent version different from the pin.
 - Changing scoring rules requires bumping `SCORING_VERSION`. Changing the judge
   prompt changes `judge_prompt_sha256()`, which is recorded in every grade.
+- Judges follow one naming rule, documented in the `judge.py` docstring and
+  `docs/articles/judge.md`: everything is named after the provider in
+  `providers.PROVIDERS`. Judge models are `<provider>/<model>`, the backend
+  name is the provider name, the class is `<Provider>Judge` (PascalCase of
+  the kebab-case name), and the SDK extra is `judge-<provider>` (`judge`
+  installs all). Tests enforce the rule, the extras, and the docs table; do
+  not add a judge under another name or accept unprefixed judge models.
 - Do not log API keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `XAI_API_KEY`,
   `OPENCODE_API_KEY`) or OAuth tokens; manifests record variable names only.
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from collections.abc import Callable
 from pathlib import Path
@@ -8,7 +9,15 @@ from typing import Any
 
 import pytest
 
-from trialdesignbench.dataset import RUBRICS_FILE, import_intake, load_rubrics
+# Rich reads FORCE_COLOR when the CLI consoles are created at import time;
+# the CLI tests assert on plain output, so the suite never inherits it.
+os.environ.pop("FORCE_COLOR", None)
+
+from trialdesignbench.dataset import (  # noqa: E402
+    RUBRICS_FILE,
+    import_intake,
+    load_rubrics,
+)
 from trialdesignbench.grade import RscriptResult
 from trialdesignbench.schema import RubricSet
 

@@ -42,7 +42,7 @@ kept apart in reports.
 
 ```bash
 uv add trialdesignbench           # dataset, build, grade, report
-uv add "trialdesignbench[judge]"  # + Anthropic SDK for the Anthropic rubric judge
+uv add "trialdesignbench[judge]"  # + SDKs of all rubric judges (or one judge-<provider>)
 uv add "trialdesignbench[harbor]" # + Harbor to run agents
 ```
 
@@ -77,7 +77,7 @@ uv run tdb build \
 
 Run an agent with the network canary, then aggregate. The agent reads its
 provider's API key (here the `ANTHROPIC_API_KEY`). The rubric judge needs
-the key of its backend, `ANTHROPIC_API_KEY` by default.
+the key of its own provider, `ANTHROPIC_API_KEY` by default.
 
 ```bash
 export ANTHROPIC_API_KEY=...

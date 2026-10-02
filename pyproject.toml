@@ -29,8 +29,14 @@ classifiers = [
 requires-python = ">= 3.12"
 
 [project.optional-dependencies]
-# The Anthropic SDK powers the default rubric judge (`tdb grade`).
-judge = ["anthropic>=1.7.0"]
+# Rubric judge SDKs, one extra per model provider (`judge-<provider>`, the
+# naming rule in `trialdesignbench.judge`). `judge` installs all of them, so
+# the shared image can serve whichever judge a task selects. The
+# `opencode-go` judge uses the standard library and needs no extra.
+judge-anthropic = ["anthropic>=1.8.0"]
+judge-openai = ["openai>=2.54.0"]
+judge-xai = ["xai-sdk>=1.20.0"]
+judge = ["trialdesignbench[judge-anthropic,judge-openai,judge-xai]"]
 # Harbor runs agents in Docker (`tdb run`, `tdb regrade`). It is an optional
 # extra so the core package stays light.
 harbor = ["harbor==0.23.0"]
@@ -55,6 +61,11 @@ profile = "black"
 exclude = ["vendor/", "deps-src/", "tmp/", "site/"]
 plugins = ["pydantic.mypy"]
 
+[[tool.mypy.overrides]]
+# The xAI SDK and its gRPC and protobuf dependencies ship no type information.
+module = ["xai_sdk", "xai_sdk.*", "grpc", "grpc.*", "google.protobuf.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 norecursedirs = [".venv", "vendor", "deps-src", "tmp"]
@@ -65,7 +76,9 @@ exclude-newer = "7 days"
 
 [dependency-groups]
 dev = [
-    "anthropic>=1.7.0",
+    "anthropic>=1.8.0",
+    "openai>=2.54.0",
+    "xai-sdk>=1.20.0",
     "isort>=8.0.1",
     "mkdocstrings-python>=2.0.3",
     "mypy>=2.0.0",

@@ -19,9 +19,10 @@ uv run tdb run \
 Which agents can run, the credentials each needs, the reasoning effort
 levels each accepts, and the closed-book settings `tdb run` applies are
 described in [Agents](agents.md). The rubric
-judge in the verifier needs the key matching the built judge model
-(`ANTHROPIC_API_KEY`, or `OPENCODE_API_KEY` for `opencode-go/` models);
-see [Judge](judge.md).
+judge in the verifier needs the key of the built judge model's provider
+(`ANTHROPIC_API_KEY` for the default `anthropic/` model, `OPENAI_API_KEY`
+for `openai/`, `XAI_API_KEY` for `xai/`, `OPENCODE_API_KEY` for
+`opencode-go/`); see [Judge](judge.md).
 
 ## Options
 
@@ -37,7 +38,7 @@ see [Judge](judge.md).
 | `--task-ids` | Subset of tasks. |
 | `--job-name`, `--jobs-dir` | Job location (default `jobs/<timestamp>`). |
 | `--canary` | Run the network canary as the first task. |
-| `--yes` | Pass `--yes` to Harbor (skip its prompt before passing `ANTHROPIC_API_KEY` to the verifier). |
+| `--yes` | Pass `--yes` to Harbor (skip its prompt before passing the judge key to the verifier). |
 | `--dry-run` | Write `job.yaml` and `tdb-run.json`, print the command, and stop. |
 
 `tdb run` fails before launching when an agent is not supported, the model's
@@ -104,4 +105,4 @@ uv run tdb regrade \
 This wraps `harbor job regrade`. The recorded agent outputs and trajectories
 are re-scored with the verifier from `--tasks` (for example after a rubric or
 grader change). No agent is re-run and no agent credentials are needed; the
-judge still needs `ANTHROPIC_API_KEY`.
+judge still needs its provider's key (`ANTHROPIC_API_KEY` by default).

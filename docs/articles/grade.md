@@ -6,8 +6,8 @@ uv run tdb grade \
   --rubrics rubrics.json \
   --out <dir> \
   [--trajectory trajectory.json] \
-  [--judge anthropic|opencode-go|fake] \
-  [--judge-model ID] \
+  [--judge anthropic|openai|xai|opencode-go|fake] \
+  [--judge-model <provider>/<model>] \
   [--judge-votes K]
 ```
 
@@ -64,12 +64,12 @@ derivation questions the full `output.R`. It never sees other questions'
 rubrics. Each criterion gets `pass`, `fail`, or `unclear` with a rationale and
 a quoted evidence excerpt.
 
-The default `AnthropicJudge` uses the Anthropic Messages API with structured
-JSON output (`output_config.format`), model `claude-opus-5-5` unless
-`--judge-model` or `TDB_JUDGE_MODEL` says otherwise; an `opencode-go/<id>`
-model selects `OpencodeGoJudge` instead. Model choice, sampling settings,
-credentials, and network access are covered in
-[Judge](judge.md). Transient errors (rate limits,
+The judge model's provider selects the judge: `anthropic/claude-opus-5-5`
+(the default, `AnthropicJudge`) unless `--judge-model` or `TDB_JUDGE_MODEL`
+says otherwise, and `openai/`, `xai/`, and `opencode-go/` models select the
+OpenAI, xAI, and OpenCode Go judges. All use structured JSON output with the
+same prompt. Model choice, sampling settings, credentials, and network access
+are covered in [Judge](judge.md). Transient errors (rate limits,
 5xx, truncated or malformed responses) are retried with backoff. After the
 retries, every criterion of that question is marked `error`. `--judge-votes K`
 repeats the call K times and takes the majority; ties are `unclear` and any

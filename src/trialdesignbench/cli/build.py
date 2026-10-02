@@ -10,7 +10,9 @@ from trialdesignbench import environment
 from trialdesignbench.build import BuildOptions, GraderSource, build_tasks
 from trialdesignbench.cli._console import console, fail, warn
 from trialdesignbench.dataset import DatasetError
-from trialdesignbench.judge import DEFAULT_JUDGE_MODEL, judge_backend
+from trialdesignbench.judge import DEFAULT_JUDGE_MODEL, JUDGE_BACKENDS, judge_backend
+
+_JUDGES = ", ".join(JUDGE_BACKENDS)
 
 
 def build(
@@ -49,7 +51,8 @@ def build(
         str,
         typer.Option(
             "--judge-model",
-            help="Rubric judge model: an Anthropic id or opencode-go/<id>.",
+            help=f"Rubric judge model, <provider>/<model> with provider one of "
+            f"{_JUDGES}.",
         ),
     ] = DEFAULT_JUDGE_MODEL,
     agent_timeout: Annotated[

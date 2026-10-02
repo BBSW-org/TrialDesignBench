@@ -14,7 +14,7 @@ One shared, pinned Docker image serves both the agent and the verifier.
 | Agent CLIs | Claude Code 2.1.287, Codex CLI 0.160.0 (preinstalled) |
 | Agent settings | `/etc/grok/requirements.toml` for Grok Build 1.0.46; OpenCode 1.18.34 plugin package and model catalog (both CLIs are installed by Harbor at setup) |
 | Skills | `RConsortium/pharma-skills` at a pinned commit, in `/skills/<name>/SKILL.md` |
-| Grader | `trialdesignbench[judge]` at the package version, in `/opt/tdb/venv` |
+| Grader | `trialdesignbench[judge]` (the grader with every judge SDK) at the package version, in `/opt/tdb/venv` |
 
 The pins live in `trialdesignbench.environment.PINS`. `tdb env build` passes
 them as build arguments and records them as image labels
@@ -86,8 +86,10 @@ image could enforce more than this. Probe runs confirmed that it blocks
 shell commands and the CLIs' own URL fetch tools for every agent; see
 [Closed book](closed-book.md#how-harbor-enforces-the-allowlist).
 
-The verifier container uses its own allowlist with only the judge API host
-(`api.anthropic.com`), and the grader is preinstalled so it needs no PyPI.
+The verifier container uses its own allowlist with only the judge
+provider's API host (`api.anthropic.com` for the default judge model; see
+[Judge](judge.md#network)), and the grader is preinstalled so it needs no
+PyPI.
 
 ### 2. Server-side web tools
 

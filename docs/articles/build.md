@@ -59,11 +59,11 @@ the test suite checks this.
   by `tdb run` with the model API hosts plus any install hosts (see
   [Run](run.md#network-allowlists)).
 - `[verifier] environment_mode = "separate"`, `timeout_sec = 1800`.
-- `[verifier.env]`: `TDB_JUDGE_MODEL` and the judge key as
-  `"${...}"` (`ANTHROPIC_API_KEY`, or `OPENCODE_API_KEY` for an `opencode-go/`
-  judge model).
+- `[verifier.env]`: `TDB_JUDGE_MODEL` and the key of the judge model's
+  provider as `"${...}"` (`ANTHROPIC_API_KEY` for the default
+  `anthropic/` judge model; see [Judge](judge.md#authentication)).
 - `[verifier.environment]`: `network_mode = "allowlist"` with only the judge
-  API host.
+  provider's API host.
 - `artifacts = ["/app/output.json", "/app/output.R", "/logs/agent/trajectory.json"]`.
 
 !!! note "Why the verifier image is built from `tests/Dockerfile`"

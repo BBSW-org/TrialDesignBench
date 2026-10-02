@@ -22,7 +22,7 @@ refuses any other agent.
 
 - `--model` is always `<provider>/<model>`, for example
   `anthropic/claude-opus-5-5`, `openai/gpt-6-astra`, `xai/grok-4.7`, or
-  `opencode-go/muse-spark-1.3-contributor`.
+  `opencode-go/grok-4.7`.
   The provider decides which API key is required and which API host is
   allowlisted, so a model from any other provider is refused.
 - The pinned version is passed to Harbor as the agent `version`;
@@ -129,7 +129,7 @@ and model, and report the level with every result.
 
 Agent credentials and the [judge](judge.md) credential are separate
 concerns. Agents authenticate to their own model API as described here; the
-verifier's judge needs the key of its own backend (`ANTHROPIC_API_KEY` by
+verifier's judge needs the key of its own provider (`ANTHROPIC_API_KEY` by
 default), whichever agent runs.
 
 Credentials are read from the environment of the shell that runs `tdb run`.
@@ -150,7 +150,7 @@ Export the key for the provider of each `--model`:
 | `opencode-go` | `OPENCODE_API_KEY` | `opencode.ai` | [OpenCode Console](https://opencode.ai/auth) (Go subscription) |
 
 ```bash
-export ANTHROPIC_API_KEY=... # agent (anthropic/ models) and the judge
+export ANTHROPIC_API_KEY=... # agent (anthropic/ models) and the default judge
 export OPENAI_API_KEY=...    # codex, or opencode with openai/ models
 export XAI_API_KEY=...       # grok-build, or opencode with xai/ models
 export OPENCODE_API_KEY=...  # opencode with opencode-go/ models
@@ -169,6 +169,14 @@ credential mapping for `opencode-go`, so `tdb run` adds
 `OPENCODE_API_KEY = "${OPENCODE_API_KEY}"` to the agent's `env` in
 `job.yaml`; Harbor resolves the template from the host environment at
 launch, so the value is still never written.
+
+Some OpenCode Go models, for example `muse-spark-1.3-contributor`, train on
+request data, and the gateway refuses them with HTTP 400 unless the
+workspace's privacy settings allow such endpoints. Leave that setting off
+for benchmark runs: an agent sends the trial document and a
+[judge](judge.md#opencode-go) sends the hidden rubrics. Use a model the
+gateway serves without it, such as `opencode-go/grok-4.7` or
+`opencode-go/kimi-k3`.
 
 ### Subscriptions (`--auth subscription`)
 

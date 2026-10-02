@@ -10,7 +10,14 @@ from rich.table import Table
 from trialdesignbench.cli._console import console, fail
 from trialdesignbench.dataset import DatasetError
 from trialdesignbench.grade import DEFAULT_RSCRIPT_TIMEOUT_SEC, grade_directory
-from trialdesignbench.judge import JUDGE_BACKENDS, FakeJudge, Judge, make_judge
+from trialdesignbench.judge import (
+    DEFAULT_JUDGE_MODEL,
+    JUDGE_BACKENDS,
+    JUDGE_MODEL_ENV,
+    FakeJudge,
+    Judge,
+    make_judge,
+)
 
 _BACKENDS = ", ".join(JUDGE_BACKENDS)
 
@@ -44,15 +51,15 @@ def grade(
         str | None,
         typer.Option(
             "--judge",
-            help=f"{_BACKENDS}, or fake (default: the judge-model's backend).",
+            help=f"{_BACKENDS}, or fake (default: the provider of --judge-model).",
         ),
     ] = None,
     judge_model: Annotated[
         str | None,
         typer.Option(
             "--judge-model",
-            help="Judge model: an Anthropic id or opencode-go/<id> "
-            "(default: $TDB_JUDGE_MODEL).",
+            help=f"Judge model, <provider>/<model> with provider one of "
+            f"{_BACKENDS} (default: ${JUDGE_MODEL_ENV}, then {DEFAULT_JUDGE_MODEL}).",
         ),
     ] = None,
     judge_votes: Annotated[

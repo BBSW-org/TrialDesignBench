@@ -17,6 +17,7 @@ from trialdesignbench.build import (
     default_template,
 )
 from trialdesignbench.dataset import DatasetError, import_intake
+from trialdesignbench.judge import JUDGE_BACKENDS, JudgeBackend
 
 IMAGE = "example.org/tdb-env:test"
 
@@ -195,34 +196,44 @@ def test_dockerfile_mode(dataset_dir: Path, tmp_path: Path) -> None:
     assert (task / "environment" / "install_skills.sh").is_file()
 
 
-def test_opencode_go_judge_verifier(dataset_dir: Path, tmp_path: Path) -> None:
-    out = tmp_path / "go"
-    build_tasks(
-        dataset_dir,
-        out,
-        options=BuildOptions(
-            image=IMAGE, judge_model="opencode-go/muse-spark-1.3-contributor"
-        ),
-    )
+@pytest.mark.parametrize("backend", JUDGE_BACKENDS.values(), ids=lambda b: b.name)
+def test_judge_verifier_env_and_host(
+    dataset_dir: Path, tmp_path: Path, backend: JudgeBackend
+) -> None:
+    """The verifier gets exactly the key and host of the judge model's provider."""
+    out = tmp_path / backend.name
+    model = f"{backend.name}/some-model"
+    build_tasks(dataset_dir, out, options=BuildOptions(image=IMAGE, judge_model=model))
     config = tomllib.loads((out / FIXTURE_TASK_ID / "task.toml").read_text())
-    # The verifier gets exactly the key and host of the judge model's backend.
     assert config["verifier"]["env"] == {
-        "TDB_JUDGE_MODEL": "opencode-go/muse-spark-1.3-contributor",
-        "OPENCODE_API_KEY": "${OPENCODE_API_KEY}",
+        "TDB_JUDGE_MODEL": model,
+        backend.key_env: f"${{{backend.key_env}}}",
     }
-    assert config["verifier"]["environment"]["allowed_hosts"] == ["opencode.ai"]
+    assert config["verifier"]["environment"]["allowed_hosts"] == [backend.api_host]
     # test.sh does not depend on the judge: the grader reads the backend from
     # TDB_JUDGE_MODEL, so tasks differ only in [verifier.env] and the allowlist.
-    default = tmp_path / "default"
+    default = tmp_path / f"{backend.name}-default"
     build_tasks(dataset_dir, default, options=BuildOptions(image=IMAGE))
     assert (out / FIXTURE_TASK_ID / "tests" / "test.sh").read_text() == (
         default / FIXTURE_TASK_ID / "tests" / "test.sh"
     ).read_text()
     info = json.loads((out / BUILD_MANIFEST).read_text())
-    assert info["judge_model"] == "opencode-go/muse-spark-1.3-contributor"
-    with pytest.raises(ValueError, match="no known backend"):
+    assert info["judge_model"] == model
+
+
+@pytest.mark.parametrize(
+    ("judge_model", "match"),
+    [
+        ("claude-opus-5-5", "must be <provider>/<model>"),
+        ("google/gemini-3.8-flash", "no judge for provider 'google'"),
+    ],
+)
+def test_judge_model_without_a_judge_is_refused(
+    dataset_dir: Path, tmp_path: Path, judge_model: str, match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
         build_tasks(
             dataset_dir,
             tmp_path / "bad",
-            options=BuildOptions(image=IMAGE, judge_model="openai/gpt-6-astra"),
+            options=BuildOptions(image=IMAGE, judge_model=judge_model),
         )

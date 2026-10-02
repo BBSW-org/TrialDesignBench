@@ -4,8 +4,8 @@ This module is the one place to edit when adding, changing, or removing an
 agent. Each `AgentProfile` in `AGENTS` records everything `tdb run` needs:
 
 - the model providers the agent may call (the `provider/` prefix of
-  `--model`), which fix the API key variable and the API host for
-  `--auth api`;
+  `--model`, from `trialdesignbench.providers.PROVIDERS`), which fix the
+  API key variable and the API host for `--auth api`;
 - optional subscription login for `--auth subscription`;
 - the pinned CLI version (an `ImagePins` field) and whether the CLI is
   preinstalled in the image or installed by Harbor during agent setup. In
@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from trialdesignbench import environment
+from trialdesignbench.providers import PROVIDERS, split_model
 
 AuthMode = Literal["api", "subscription"]
 
@@ -41,31 +42,6 @@ HOST_TABLE_VERSION = "2"
 
 class AgentError(ValueError):
     """Raised when an agent, model, or credential cannot be used closed book."""
-
-
-@dataclass(frozen=True)
-class Provider:
-    """A model API used with an API key."""
-
-    key_env: str
-    host: str
-    harbor_credential: bool = True
-    """True when Harbor's model connection for the provider passes `key_env`
-    to the agent itself. False when Harbor has no mapping for it: `tdb run`
-    then adds `key_env = "${key_env}"` to `agents[].env`, which Harbor
-    resolves from the host environment at launch, so the value is still
-    never written to `job.yaml`."""
-
-
-# Exact hostnames only (no wildcards) so the policy stays portable.
-PROVIDERS: Mapping[str, Provider] = {
-    "anthropic": Provider("ANTHROPIC_API_KEY", "api.anthropic.com"),
-    "openai": Provider("OPENAI_API_KEY", "api.openai.com"),
-    "xai": Provider("XAI_API_KEY", "api.x.ai"),
-    # OpenCode Go, a subscription gateway with its own model ids; Harbor only
-    # knows the `opencode` (Zen) provider under the same key.
-    "opencode-go": Provider("OPENCODE_API_KEY", "opencode.ai", harbor_credential=False),
-}
 
 
 @dataclass(frozen=True)
@@ -342,12 +318,13 @@ def get_profile(name: str) -> AgentProfile:
 
 def model_provider(profile: AgentProfile, model: str) -> str:
     """The provider prefix of `model`, which must be one the agent may call."""
-    prefix, sep, rest = model.partition("/")
-    if not sep or not prefix or not rest:
+    try:
+        prefix, _ = split_model(model)
+    except ValueError as exc:
         raise AgentError(
             f"--model for {profile.name} must be <provider>/<model> with "
             f"provider one of {', '.join(profile.providers)}; got {model!r}"
-        )
+        ) from exc
     if prefix not in profile.providers:
         raise AgentError(
             f"{profile.name} cannot use {prefix!r} models closed book; "

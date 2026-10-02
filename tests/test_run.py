@@ -9,6 +9,7 @@ import pytest
 from tests.conftest import FIXTURE_TASK_ID
 from trialdesignbench import agents, environment
 from trialdesignbench.build import BuildOptions, build_tasks
+from trialdesignbench.judge import JUDGE_BACKENDS, JudgeBackend
 from trialdesignbench.run import (
     AgentRequest,
     RunError,
@@ -162,7 +163,7 @@ def test_grok_build_two_phase_policy(tasks_dir: Path, tmp_path: Path) -> None:
         ("openai/gpt-6-astra", "api.openai.com", "OPENAI_API_KEY"),
         ("xai/grok-4.7", "api.x.ai", "XAI_API_KEY"),
         (
-            "opencode-go/muse-spark-1.3-contributor",
+            "opencode-go/grok-4.7",
             "opencode.ai",
             "OPENCODE_API_KEY",
         ),
@@ -347,12 +348,39 @@ def test_subscription_auth(
 
 
 def test_judge_key_required(tasks_dir: Path, tmp_path: Path) -> None:
-    with pytest.raises(RunError, match="judge"):
+    with pytest.raises(RunError, match="judge.*ANTHROPIC_API_KEY"):
         plan(
             tasks_dir,
             tmp_path,
             [AgentRequest("codex", "openai/x")],
             env={"OPENAI_API_KEY": "k"},
+        )
+
+
+@pytest.mark.parametrize("backend", JUDGE_BACKENDS.values(), ids=lambda b: b.name)
+def test_judge_key_and_host_follow_the_judge_model(
+    dataset_dir: Path, tmp_path: Path, backend: JudgeBackend
+) -> None:
+    """`tdb run` requires the built judge's key and records its verifier host."""
+    tasks = tmp_path / "tasks"
+    build_tasks(
+        dataset_dir,
+        tasks,
+        options=BuildOptions(
+            image="tdb-env:test", judge_model=f"{backend.name}/some-model"
+        ),
+    )
+    req = [AgentRequest("claude-code", "anthropic/x")]
+    p = plan(tasks, tmp_path, req)
+    assert p.manifest.judge_model == f"{backend.name}/some-model"
+    assert p.manifest.network_policy.verifier_allowed_hosts == (backend.api_host,)
+    assert "sk-test" not in p.job_yaml.read_text()
+    with pytest.raises(RunError, match=f"judge.*{backend.key_env}"):
+        plan(
+            tasks,
+            tmp_path,
+            req,
+            env={k: v for k, v in API_ENV.items() if k != backend.key_env},
         )
 
 
@@ -364,14 +392,14 @@ def go_tasks_dir(dataset_dir: Path, tmp_path: Path) -> Path:
         out,
         options=BuildOptions(
             image="tdb-env:test",
-            judge_model="opencode-go/muse-spark-1.3-contributor",
+            judge_model="opencode-go/grok-4.7",
         ),
     )
     return out
 
 
 def test_opencode_go_judge_run(go_tasks_dir: Path, tmp_path: Path) -> None:
-    req = [AgentRequest("opencode", "opencode-go/muse-spark-1.3-contributor")]
+    req = [AgentRequest("opencode", "opencode-go/grok-4.7")]
     p = plan(go_tasks_dir, tmp_path, req)
     assert p.manifest.network_policy.verifier_allowed_hosts == ("opencode.ai",)
     agent = load_job(p)["agents"][0]

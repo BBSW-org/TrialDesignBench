@@ -2,6 +2,45 @@
 
 ## trialdesignbench (development version)
 
+### Breaking changes
+
+- Judge models are always `<provider>/<model>`, like `--model` for agents.
+  The default judge model is now `anthropic/claude-opus-5-5`, and a bare
+  Anthropic id such as `claude-opus-5-5` is refused by
+  `tdb build --judge-model`, `tdb grade --judge-model`, and
+  `TDB_JUDGE_MODEL`; rebuild tasks that were built with one (#127).
+- The `judge` extra now installs the SDKs of every rubric judge, which the
+  shared image uses. Install `judge-anthropic` for the Anthropic SDK alone
+  (#127).
+
+### New features
+
+- Add an OpenAI judge and an xAI judge, so every supported agent harness has
+  a rubric judge from the same model provider (#127).
+
+    `tdb build --judge-model openai/<id>` selects `OpenaiJudge`, which
+    grades with the OpenAI Responses API through the official `openai`
+    package (extra `judge-openai`, `OPENAI_API_KEY`, `api.openai.com`);
+    `xai/<id>` selects `XaiJudge`, which grades through the official
+    `xai-sdk` over gRPC (extra `judge-xai`, `XAI_API_KEY`, `api.x.ai`).
+    Both use the same prompt, structured JSON output, voting, retries, and
+    judge log as the existing judges.
+
+### Improvements
+
+- One deterministic rule names everything about a judge after its model
+  provider: the `<provider>/` model prefix, the `--judge` backend name, the
+  class name (`<Provider>Judge`, so `AnthropicJudge`, `OpenaiJudge`,
+  `XaiJudge`, `OpencodeGoJudge`), the `judge-<provider>` extra, and the API
+  key and host. Providers move to the new `trialdesignbench.providers`
+  module, shared by agents and judges, and tests enforce the rule, the
+  extras, and the Judge article (#127).
+- Change the default OpenCode Go judge model to `opencode-go/grok-4.7`. The
+  previous default, `muse-spark-1.3-contributor`, trains on request data,
+  and the gateway refuses it unless a workspace privacy setting allows such
+  models, which a judge that sees hidden rubrics must not rely on. The Judge
+  and Agents articles document the caveat (#127).
+
 ### Maintenance
 
 - Report the latest uv version alongside agent releases in

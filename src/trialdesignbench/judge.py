@@ -1,17 +1,36 @@
 """Rubric judges.
 
 A judge maps (question, criteria, agent artifacts) to one verdict per
-criterion. Judges never see other questions' rubrics. `AnthropicJudge` is the
-default; `OpencodeGoJudge` grades over the OpenCode Go gateway; `FakeJudge`
+criterion. Judges never see other questions' rubrics. The API judges share
+one prompt, response contract, voting, retry, and logging scheme
+(`ApiJudge`) and differ only in the provider API they call. `FakeJudge`
 gives deterministic verdicts for tests and dry runs.
 
-The judge model string selects the backend (`judge_backend`): a plain
-Anthropic model id, or `<backend>/<model>` for any other backend. `tdb build`
-records the model per task, so the verifier receives exactly the API key and
-egress its judge needs.
+## Naming rule
 
-The `anthropic` SDK is imported lazily so the core package and conversion-only
-workflows never need it; the OpenCode Go judge uses the standard library.
+One rule names everything about a judge: the model provider it calls, by the
+provider's identifier in `trialdesignbench.providers.PROVIDERS` (the same
+`<provider>/` prefix `tdb run --model` uses). For a provider `p`:
+
+- the judge model is `p/<model>`, for example `anthropic/claude-opus-5-5`
+  (`tdb build --judge-model`, `TDB_JUDGE_MODEL`, `tdb grade --judge-model`);
+- the backend name is `p` (`tdb grade --judge`, `JudgeInfo.name`);
+- the class is `judge_class_name(p)`: `p` in PascalCase plus `Judge`, each
+  hyphen-separated segment capitalized (`AnthropicJudge`, `OpenaiJudge`,
+  `XaiJudge`, `OpencodeGoJudge`);
+- the provider's official SDK, when the judge uses one, is the optional
+  extra `judge-p` (`trialdesignbench[judge-anthropic]`); `judge` installs
+  them all;
+- the API key variable and the egress host are the provider's.
+
+The judge model therefore selects the backend (`judge_backend`), and `tdb
+build` records it per task so the verifier receives exactly the API key and
+egress its judge needs. The tests enforce the rule for every judge in
+`API_JUDGES`; a new judge is an `ApiJudge` subclass named by the rule, with
+its `JudgeBackend`, added to that tuple.
+
+SDKs are imported lazily, so the core package and conversion-only workflows
+never need them; the OpenCode Go judge uses the standard library.
 """
 
 from __future__ import annotations
@@ -24,12 +43,14 @@ import urllib.error
 import urllib.request
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any, ClassVar, Literal, NoReturn, Protocol
 
 from trialdesignbench.provenance import package_version, sha256_text
+from trialdesignbench.providers import PROVIDERS, Provider, split_model
 from trialdesignbench.schema import (
     Criterion,
     CriterionResult,
@@ -40,53 +61,89 @@ from trialdesignbench.schema import (
 )
 from trialdesignbench.scoring import majority_verdict
 
-DEFAULT_JUDGE_MODEL = "claude-opus-5-5"
+DEFAULT_JUDGE_MODEL = "anthropic/claude-opus-5-5"
 JUDGE_MODEL_ENV = "TDB_JUDGE_MODEL"
+
+
+def judge_class_name(provider: str) -> str:
+    """The class name the naming rule gives the judge of a provider.
+
+    Each hyphen-separated segment of the provider name is capitalized:
+    `opencode-go` names `OpencodeGoJudge`.
+    """
+    return "".join(part.capitalize() for part in provider.split("-")) + "Judge"
 
 
 @dataclass(frozen=True)
 class JudgeBackend:
-    """A model API the rubric judge can call.
+    """A model provider the rubric judge can call, with the judge's defaults.
 
     `tdb build` writes `key_env` as `"${key_env}"` into `[verifier.env]` and
     `api_host` into the verifier allowlist; `tdb run` checks the key exists.
     """
 
-    name: str
-    """Backend name: `JudgeInfo.name`, and a `tdb grade --judge` value."""
-    key_env: str
-    """Host variable holding the API key."""
-    api_host: str
-    """Hostname the judge reaches (exact, for the verifier allowlist)."""
+    provider: Provider
+    """The provider that names the judge and supplies its key and host."""
     default_model: str
-    """Model used when neither `--judge-model` nor `TDB_JUDGE_MODEL` is set."""
-    model_prefix: str = ""
-    """`<name>/` prefix selecting this backend in a judge model string; empty
-    for the backend of unprefixed model ids."""
+    """`<provider>/<model>` used when neither `--judge-model` nor
+    `TDB_JUDGE_MODEL` is set."""
+    sdk: str | None = None
+    """Distribution name of the provider's official SDK the judge uses,
+    installed by the extra `judge-<provider>`; `None` for the standard
+    library."""
+
+    def __post_init__(self) -> None:
+        if split_model(self.default_model)[0] != self.name:
+            raise ValueError(
+                f"default model {self.default_model!r} is not a {self.name}/ model"
+            )
+
+    @property
+    def name(self) -> str:
+        """Backend name: `JudgeInfo.name`, and a `tdb grade --judge` value."""
+        return self.provider.name
+
+    @property
+    def key_env(self) -> str:
+        """Host variable holding the API key."""
+        return self.provider.key_env
+
+    @property
+    def api_host(self) -> str:
+        """Hostname the judge reaches (exact, for the verifier allowlist)."""
+        return self.provider.host
+
+    @property
+    def extra(self) -> str | None:
+        """Optional extra installing the SDK, `None` when none is needed."""
+        return None if self.sdk is None else f"judge-{self.name}"
 
     def model_id(self, model: str) -> str:
-        """The model string without the backend prefix, as the API expects."""
-        return model.removeprefix(self.model_prefix)
+        """`model` without the `<provider>/` prefix, as the API expects."""
+        return model.removeprefix(f"{self.name}/")
 
 
 def judge_backend(model: str) -> JudgeBackend:
-    """The backend a judge model string selects.
+    """The backend a `<provider>/<model>` judge model string selects.
 
-    `opencode-go/<id>` selects the OpenCode Go gateway; an unprefixed id is an
-    Anthropic model. Any other prefix is a `ValueError`, so a typo never
-    sends the model to the wrong API.
+    A string without a provider, or with a provider that has no judge, is a
+    `ValueError`, so a typo never sends the model to the wrong API.
     """
-    prefix = model.partition("/")[0] + "/" if "/" in model else ""
-    for backend in JUDGE_BACKENDS.values():
-        if backend.model_prefix == prefix:
-            return backend
-    prefixed = ", ".join(
-        f"{b.model_prefix}<model>" for b in JUDGE_BACKENDS.values() if b.model_prefix
-    )
-    raise ValueError(
-        f"judge model {model!r} has no known backend; use an Anthropic model id "
-        f"or {prefixed}"
-    )
+    judges = ", ".join(JUDGE_BACKENDS)
+    try:
+        provider, _ = split_model(model)
+    except ValueError as exc:
+        raise ValueError(
+            f"judge model {model!r} must be <provider>/<model> with provider "
+            f"one of {judges}"
+        ) from exc
+    backend = JUDGE_BACKENDS.get(provider)
+    if backend is None:
+        raise ValueError(
+            f"judge model {model!r} has no judge for provider {provider!r}; "
+            f"judges: {judges}"
+        )
+    return backend
 
 
 # Omit sampling parameters for these model families for forward compatibility,
@@ -374,8 +431,58 @@ def _parse_results(text: str, ids: Sequence[str]) -> dict[str, dict[str, str]]:
 
 
 def supports_temperature(model: str) -> bool:
-    """Whether the judge should send an explicit temperature for this model."""
-    return not model.startswith(_NO_SAMPLING_PREFIXES)
+    """Whether the Anthropic judge should send an explicit temperature.
+
+    Accepts the model id with or without its `anthropic/` prefix.
+    """
+    return not model.rpartition("/")[2].startswith(_NO_SAMPLING_PREFIXES)
+
+
+# Responses of the two OpenAI wire protocols, as plain dicts: the OpenAI judge
+# dumps its SDK objects, the OpenCode Go judge reads the JSON directly.
+
+
+def _chat_completion_text(payload: Mapping[str, Any]) -> str:
+    """Message text of a Chat Completions response, or why it is unusable."""
+    choices = payload.get("choices")
+    if not isinstance(choices, list) or not choices:
+        raise _Retryable("judge response has no choices")
+    choice = choices[0]
+    message = choice.get("message") or {}
+    if message.get("refusal"):
+        raise RuntimeError("judge model refused the request")
+    if choice.get("finish_reason") == "length":
+        raise _Retryable("judge response truncated at max_tokens")
+    content = message.get("content")
+    if not isinstance(content, str) or not content.strip():
+        raise _Retryable("judge response message is empty")
+    return content
+
+
+def _response_text(payload: Mapping[str, Any]) -> str:
+    """Message text of a Responses API response, or why it is unusable."""
+    status = payload.get("status")
+    if status != "completed":
+        detail = (payload.get("incomplete_details") or {}).get("reason") or (
+            payload.get("error") or {}
+        ).get("message")
+        suffix = f": {detail}" if detail else ""
+        raise _Retryable(f"judge response status {status!r}{suffix}")
+    output = payload.get("output")
+    if not isinstance(output, list):
+        raise _Retryable("judge response has no output list")
+    for item in output:
+        if not isinstance(item, dict) or item.get("type") != "message":
+            continue
+        parts = [p for p in item.get("content") or [] if isinstance(p, dict)]
+        if any(p.get("type") == "refusal" for p in parts):
+            raise RuntimeError("judge model refused the request")
+        text = "".join(
+            p.get("text", "") for p in parts if p.get("type") == "output_text"
+        )
+        if text.strip():
+            return text
+    raise _Retryable("judge response has no message text")
 
 
 class ApiJudge(ABC):
@@ -418,6 +525,11 @@ class ApiJudge(ABC):
         self.temperature: float | None = None
         self._sleep = sleep
 
+    @property
+    def model_id(self) -> str:
+        """The judge model without its provider prefix, as the API expects."""
+        return self.backend.model_id(self.model)
+
     def info(self) -> JudgeInfo:
         return JudgeInfo(
             name=self.backend.name,
@@ -429,8 +541,35 @@ class ApiJudge(ABC):
         )
 
     def sdk_version(self) -> str | None:
-        """Version of the client library, if the judge uses one."""
-        return None
+        """Installed version of the backend's SDK, if the judge uses one."""
+        if self.backend.sdk is None:
+            return None
+        try:
+            return version(self.backend.sdk)
+        except PackageNotFoundError:
+            return None
+
+    def _api_key(self) -> str:
+        """The provider's API key from the environment, or a clear error."""
+        key = os.environ.get(self.backend.key_env)
+        if not key:
+            raise RuntimeError(
+                f"The {self.backend.provider.title} judge needs "
+                f"{self.backend.key_env} in the environment."
+            )
+        return key
+
+    @contextmanager
+    def _importing_sdk(self) -> Iterator[None]:
+        """Turn a missing SDK into an error naming the extra to install."""
+        try:
+            yield
+        except ImportError as exc:
+            raise RuntimeError(
+                f"The {self.backend.provider.title} judge needs the "
+                f"`{self.backend.sdk}` package: install "
+                f"`trialdesignbench[{self.backend.extra}]`."
+            ) from exc
 
     @abstractmethod
     def _request(
@@ -532,17 +671,12 @@ class ApiJudge(ABC):
 class AnthropicJudge(ApiJudge):
     """Judge backed by the Anthropic Messages API with structured JSON output.
 
-    Needs the `anthropic` package (`trialdesignbench[judge]`). Sends
-    `temperature=0` except for model families that reject sampling
-    parameters (`supports_temperature`).
+    Needs the `anthropic` package (`trialdesignbench[judge-anthropic]`).
+    Judge models are `anthropic/<id>`. Sends `temperature=0` except for model
+    families that reject sampling parameters (`supports_temperature`).
     """
 
-    backend = JudgeBackend(
-        name="anthropic",
-        key_env="ANTHROPIC_API_KEY",
-        api_host="api.anthropic.com",
-        default_model=DEFAULT_JUDGE_MODEL,
-    )
+    backend = JudgeBackend(PROVIDERS["anthropic"], DEFAULT_JUDGE_MODEL, sdk="anthropic")
 
     def __init__(
         self,
@@ -561,28 +695,17 @@ class AnthropicJudge(ApiJudge):
             max_tokens=max_tokens,
             sleep=sleep,
         )
-        self.temperature = 0.0 if supports_temperature(self.model) else None
+        self.temperature = 0.0 if supports_temperature(self.model_id) else None
         self._client = client
 
     @property
     def client(self) -> Any:
         if self._client is None:
-            try:
+            with self._importing_sdk():
                 import anthropic
-            except ImportError as exc:
-                raise RuntimeError(
-                    "The Anthropic judge needs the `anthropic` package: "
-                    "install `trialdesignbench[judge]`."
-                ) from exc
             # Retries are handled here so each attempt is recorded.
-            self._client = anthropic.Anthropic(max_retries=0)
+            self._client = anthropic.Anthropic(api_key=self._api_key(), max_retries=0)
         return self._client
-
-    def sdk_version(self) -> str | None:
-        try:
-            return version("anthropic")
-        except PackageNotFoundError:
-            return None
 
     def _request(
         self,
@@ -592,7 +715,7 @@ class AnthropicJudge(ApiJudge):
     ) -> dict[str, Any]:
         ids = [c.criterion_id for _, c in criteria]
         params: dict[str, Any] = {
-            "model": self.model,
+            "model": self.model_id,
             "max_tokens": self.max_tokens,
             "system": JUDGE_SYSTEM_PROMPT,
             "messages": [
@@ -612,7 +735,8 @@ class AnthropicJudge(ApiJudge):
     def _call_once(
         self, request: dict[str, Any], ids: Sequence[str]
     ) -> tuple[dict[str, dict[str, str]], dict[str, Any]]:
-        import anthropic
+        with self._importing_sdk():
+            import anthropic
 
         try:
             response = self.client.messages.create(**request)
@@ -649,6 +773,218 @@ class AnthropicJudge(ApiJudge):
         return _parse_results(text, ids), raw
 
 
+class OpenaiJudge(ApiJudge):
+    """Judge backed by the OpenAI Responses API with structured JSON output.
+
+    Needs the `openai` package (`trialdesignbench[judge-openai]`). Judge
+    models are `openai/<id>`. The request asks for strict JSON schema output
+    and `store=false`, so OpenAI keeps no copy of the exchange; no sampling
+    parameters are sent, because reasoning models reject them and the others
+    then use the API defaults. `max_output_tokens` bounds reasoning and
+    answer tokens together.
+    """
+
+    backend = JudgeBackend(PROVIDERS["openai"], "openai/gpt-6-astra", sdk="openai")
+
+    def __init__(
+        self,
+        model: str | None = None,
+        *,
+        votes: int = 1,
+        max_retries: int = 4,
+        max_tokens: int = 16000,
+        timeout: float = 600.0,
+        client: Any | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        super().__init__(
+            model,
+            votes=votes,
+            max_retries=max_retries,
+            max_tokens=max_tokens,
+            sleep=sleep,
+        )
+        self.timeout = timeout
+        self._client = client
+
+    @property
+    def client(self) -> Any:
+        if self._client is None:
+            with self._importing_sdk():
+                import openai
+            # Retries are handled here so each attempt is recorded.
+            self._client = openai.OpenAI(
+                api_key=self._api_key(), max_retries=0, timeout=self.timeout
+            )
+        return self._client
+
+    def _request(
+        self,
+        question: Question,
+        criteria: Sequence[tuple[Rubric, Criterion]],
+        artifacts: JudgeArtifacts,
+    ) -> dict[str, Any]:
+        ids = [c.criterion_id for _, c in criteria]
+        return {
+            "model": self.model_id,
+            "instructions": JUDGE_SYSTEM_PROMPT,
+            "input": build_user_message(question, criteria, artifacts),
+            "max_output_tokens": self.max_tokens,
+            "store": False,
+            "text": {
+                "format": {
+                    "type": "json_schema",
+                    "name": "grade",
+                    "strict": True,
+                    "schema": _result_schema(ids),
+                }
+            },
+        }
+
+    def _call_once(
+        self, request: dict[str, Any], ids: Sequence[str]
+    ) -> tuple[dict[str, dict[str, str]], dict[str, Any]]:
+        with self._importing_sdk():
+            import openai
+
+        try:
+            response = self.client.responses.create(**request)
+        except (
+            openai.RateLimitError,
+            openai.APIConnectionError,
+            openai.InternalServerError,
+        ) as exc:
+            raise _Retryable(f"{type(exc).__name__}: {exc}") from exc
+        except openai.APIStatusError as exc:
+            if exc.status_code >= 500 or exc.status_code in (408, 409, 429):
+                raise _Retryable(f"{type(exc).__name__}: {exc}") from exc
+            raise
+        payload = response.model_dump(mode="json")
+        raw = {
+            "id": payload.get("id"),
+            "request_id": getattr(response, "_request_id", None),
+            "model": payload.get("model"),
+            "status": payload.get("status"),
+            "usage": payload.get("usage"),
+        }
+        text = _response_text(payload)
+        return _parse_results(text, ids), {**raw, "output_text": text}
+
+
+# gRPC status codes a retry may fix (by name, so `grpc` stays a lazy import).
+_GRPC_RETRYABLE = (
+    "UNAVAILABLE",
+    "RESOURCE_EXHAUSTED",
+    "DEADLINE_EXCEEDED",
+    "ABORTED",
+    "INTERNAL",
+    "UNKNOWN",
+)
+
+
+class XaiJudge(ApiJudge):
+    """Judge backed by the xAI API through the official `xai-sdk`.
+
+    Needs the `xai-sdk` package (`trialdesignbench[judge-xai]`). Judge models
+    are `xai/<id>`. The SDK speaks gRPC to `api.x.ai` on port 443, the
+    provider's API host, so the verifier allowlist is the same as for its
+    REST API. Structured output is requested with the result JSON schema as
+    the response format; no sampling parameters are sent. The SDK's own
+    transport retries are off so that every attempt is recorded here.
+    """
+
+    backend = JudgeBackend(PROVIDERS["xai"], "xai/grok-4.7", sdk="xai-sdk")
+
+    def __init__(
+        self,
+        model: str | None = None,
+        *,
+        votes: int = 1,
+        max_retries: int = 4,
+        max_tokens: int = 16000,
+        timeout: float = 600.0,
+        client: Any | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        super().__init__(
+            model,
+            votes=votes,
+            max_retries=max_retries,
+            max_tokens=max_tokens,
+            sleep=sleep,
+        )
+        self.timeout = timeout
+        self._client = client
+
+    @property
+    def client(self) -> Any:
+        if self._client is None:
+            with self._importing_sdk():
+                import xai_sdk
+            self._client = xai_sdk.Client(
+                api_key=self._api_key(),
+                timeout=self.timeout,
+                channel_options=[("grpc.enable_retries", 0)],
+            )
+        return self._client
+
+    def _request(
+        self,
+        question: Question,
+        criteria: Sequence[tuple[Rubric, Criterion]],
+        artifacts: JudgeArtifacts,
+    ) -> dict[str, Any]:
+        """SDK-independent request; `_call_once` turns it into protobuf."""
+        ids = [c.criterion_id for _, c in criteria]
+        return {
+            "model": self.model_id,
+            "system": JUDGE_SYSTEM_PROMPT,
+            "user": build_user_message(question, criteria, artifacts),
+            "max_tokens": self.max_tokens,
+            "schema": _result_schema(ids),
+        }
+
+    def _call_once(
+        self, request: dict[str, Any], ids: Sequence[str]
+    ) -> tuple[dict[str, dict[str, str]], dict[str, Any]]:
+        with self._importing_sdk():
+            import grpc
+            from google.protobuf.json_format import MessageToDict
+            from xai_sdk.chat import system, user
+            from xai_sdk.proto import chat_pb2
+
+        response_format = chat_pb2.ResponseFormat(
+            format_type=chat_pb2.FORMAT_TYPE_JSON_SCHEMA,
+            schema=json.dumps(request["schema"]),
+        )
+        try:
+            chat = self.client.chat.create(
+                model=request["model"],
+                messages=[system(request["system"]), user(request["user"])],
+                max_tokens=request["max_tokens"],
+                response_format=response_format,
+            )
+            response = chat.sample()
+        except grpc.RpcError as exc:
+            code = exc.code()  # type: ignore[attr-defined]
+            summary = f"{code.name}: {exc.details()}"  # type: ignore[attr-defined]
+            if code.name in _GRPC_RETRYABLE:
+                raise _Retryable(summary) from exc
+            raise RuntimeError(summary) from exc
+        raw = {
+            "id": response.id,
+            "model": request["model"],
+            "finish_reason": response.finish_reason,
+            "usage": MessageToDict(response.usage, preserving_proto_field_name=True),
+        }
+        if response.finish_reason in ("REASON_MAX_LEN", "REASON_MAX_CONTEXT"):
+            raise _Retryable("judge response truncated at max_tokens")
+        text = response.content
+        if not isinstance(text, str) or not text.strip():
+            raise _Retryable("judge response message is empty")
+        return _parse_results(text, ids), {**raw, "output_text": text}
+
+
 GoProtocol = Literal["chat", "responses"]
 """OpenAI protocols of the OpenCode Go gateway: Chat Completions or Responses."""
 
@@ -656,7 +992,7 @@ GoProtocol = Literal["chat", "responses"]
 class OpencodeGoJudge(ApiJudge):
     """Judge backed by the OpenCode Go gateway, an OpenAI-compatible API.
 
-    Same prompt, response contract, voting, and retries as `AnthropicJudge`,
+    Same prompt, response contract, voting, and retries as the other judges,
     with the standard library only. Judge models are `opencode-go/<id>` for
     the ids in the gateway's model list.
 
@@ -668,15 +1004,16 @@ class OpencodeGoJudge(ApiJudge):
     `x-opencode-session` header, which the gateway requires, and a
     `trialdesignbench/<version>` user agent, because generic HTTP-library
     user agents are blocked.
+
+    Some Go models train on request data (for example
+    `muse-spark-1.3-contributor`), and the gateway refuses them with HTTP 400
+    unless a workspace privacy setting allows such endpoints. A judge sends
+    the hidden rubrics, so that setting must stay off; the default
+    `opencode-go/grok-4.7` is served without it, and a refused model fails
+    every criterion of the question loudly instead of leaking rubrics.
     """
 
-    backend = JudgeBackend(
-        name="opencode-go",
-        key_env="OPENCODE_API_KEY",
-        api_host="opencode.ai",
-        default_model="opencode-go/muse-spark-1.3-contributor",
-        model_prefix="opencode-go/",
-    )
+    backend = JudgeBackend(PROVIDERS["opencode-go"], "opencode-go/grok-4.7")
     base_url = "https://opencode.ai/zen/go/v1"
 
     def __init__(
@@ -711,7 +1048,7 @@ class OpencodeGoJudge(ApiJudge):
         """Protocol-independent request; `_body` renders it for the wire."""
         ids = [c.criterion_id for _, c in criteria]
         return {
-            "model": self.backend.model_id(self.model),
+            "model": self.model_id,
             "system": JUDGE_SYSTEM_PROMPT,
             "user": build_user_message(question, criteria, artifacts),
             "max_tokens": self.max_tokens,
@@ -751,66 +1088,19 @@ class OpencodeGoJudge(ApiJudge):
             "usage": payload.get("usage"),
         }
         text = (
-            self._responses_text(payload)
+            _response_text(payload)
             if self.protocol == "responses"
-            else self._chat_text(payload)
+            else _chat_completion_text(payload)
         )
         return _parse_results(text, ids), {**raw, "output_text": text}
 
-    @staticmethod
-    def _chat_text(payload: dict[str, Any]) -> str:
-        choices = payload.get("choices")
-        if not isinstance(choices, list) or not choices:
-            raise _Retryable("judge response has no choices")
-        choice = choices[0]
-        message = choice.get("message") or {}
-        if message.get("refusal"):
-            raise RuntimeError("judge model refused the request")
-        if choice.get("finish_reason") == "length":
-            raise _Retryable("judge response truncated at max_tokens")
-        content = message.get("content")
-        if not isinstance(content, str) or not content.strip():
-            raise _Retryable("judge response message is empty")
-        return content
-
-    @staticmethod
-    def _responses_text(payload: dict[str, Any]) -> str:
-        status = payload.get("status")
-        if status != "completed":
-            detail = (payload.get("incomplete_details") or {}).get("reason") or (
-                payload.get("error") or {}
-            ).get("message")
-            suffix = f": {detail}" if detail else ""
-            raise _Retryable(f"judge response status {status!r}{suffix}")
-        output = payload.get("output")
-        if not isinstance(output, list):
-            raise _Retryable("judge response has no output list")
-        for item in output:
-            if not isinstance(item, dict) or item.get("type") != "message":
-                continue
-            parts = [p for p in item.get("content") or [] if isinstance(p, dict)]
-            if any(p.get("type") == "refusal" for p in parts):
-                raise RuntimeError("judge model refused the request")
-            text = "".join(
-                p.get("text", "") for p in parts if p.get("type") == "output_text"
-            )
-            if text.strip():
-                return text
-        raise _Retryable("judge response has no message text")
-
     def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
-        key = os.environ.get(self.backend.key_env)
-        if not key:
-            raise RuntimeError(
-                f"The OpenCode Go judge needs {self.backend.key_env} in the "
-                "environment."
-            )
         request = urllib.request.Request(
             self.base_url + path,
             data=json.dumps(body).encode(),
             method="POST",
             headers={
-                "Authorization": f"Bearer {key}",
+                "Authorization": f"Bearer {self._api_key()}",
                 "Content-Type": "application/json",
                 "User-Agent": f"trialdesignbench/{package_version()}",
                 "x-opencode-session": self.session_id,
@@ -854,9 +1144,15 @@ class OpencodeGoJudge(ApiJudge):
         raise RuntimeError(summary) from exc
 
 
-API_JUDGES: tuple[type[ApiJudge], ...] = (AnthropicJudge, OpencodeGoJudge)
-"""Judges that call a model API. A new backend is an `ApiJudge` subclass with
-its own `JudgeBackend`, added here."""
+API_JUDGES: tuple[type[ApiJudge], ...] = (
+    AnthropicJudge,
+    OpenaiJudge,
+    XaiJudge,
+    OpencodeGoJudge,
+)
+"""Judges that call a model API, in `PROVIDERS` order. A new backend is an
+`ApiJudge` subclass named by the naming rule, with its own `JudgeBackend`,
+added here."""
 
 JUDGE_BACKENDS: Mapping[str, JudgeBackend] = {
     cls.backend.name: cls.backend for cls in API_JUDGES
