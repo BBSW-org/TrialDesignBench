@@ -67,6 +67,7 @@ the test suite checks this.
 - `artifacts = ["/app/output.json", "/app/output.R", "/logs/agent/trajectory.json"]`.
 
 !!! note "Why the verifier image is built from `tests/Dockerfile`"
+
     For separate verifiers Harbor does not upload `tests/` at runtime; the
     verifier image must already contain `/tests/test.sh`. A prebuilt
     `[verifier.environment] docker_image` would therefore start without the

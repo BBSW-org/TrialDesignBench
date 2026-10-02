@@ -145,9 +145,9 @@ Export the key for the provider of each `--model`:
 | Provider | Variable | API host | Keys from |
 | --- | --- | --- | --- |
 | `anthropic` | `ANTHROPIC_API_KEY` | `api.anthropic.com` | [Claude Console](https://platform.claude.com/) |
-| `openai` | `OPENAI_API_KEY` | `api.openai.com` | [OpenAI Platform](https://platform.openai.com/api-keys) |
-| `xai` | `XAI_API_KEY` | `api.x.ai` | [xAI Console](https://console.x.ai/home) |
-| `opencode-go` | `OPENCODE_API_KEY` | `opencode.ai` | [OpenCode Console](https://opencode.ai/auth) (Go subscription) |
+| `openai` | `OPENAI_API_KEY` | `api.openai.com` | [OpenAI Platform](https://platform.openai.com/) |
+| `xai` | `XAI_API_KEY` | `api.x.ai` | [xAI Console](https://console.x.ai/) |
+| `opencode-go` | `OPENCODE_API_KEY` | `opencode.ai` | [OpenCode Console](https://opencode.ai/console) (Go subscription) |
 
 ```bash
 export ANTHROPIC_API_KEY=... # agent (anthropic/ models) and the default judge
