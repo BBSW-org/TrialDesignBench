@@ -3,7 +3,7 @@
 Run through `docs/scripts/logo.sh`, which provides fontTools. Writes
 `docs/assets/logo.svg` and `docs/assets/favicon.svg`.
 
-The wordmark is set in Special Gothic Condensed One and converted to
+The wordmark is set in Barlow Condensed Medium and converted to
 outlines: SVGs shown through `<img>` (README, docs header) cannot load
 web fonts.
 
@@ -29,7 +29,7 @@ from fontTools.ttLib import TTFont  # type: ignore[import-not-found]
 
 HERE = Path(__file__).resolve().parent
 ASSETS = HERE.parent / "assets"
-FONT = HERE / "SpecialGothicCondensedOne-Regular.ttf"
+FONT = HERE / "BarlowCondensed-Medium.ttf"
 WORDMARK = "TrialDesignBench"
 
 # Palette: apricot -> coral -> plum.
