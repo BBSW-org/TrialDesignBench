@@ -33,7 +33,7 @@ requires-python = ">= 3.12"
 # naming rule in `trialdesignbench.judge`). `judge` installs all of them, so
 # the shared image can serve whichever judge a task selects. The
 # `opencode-go` judge uses the standard library and needs no extra.
-judge-anthropic = ["anthropic>=1.7.0"]
+judge-anthropic = ["anthropic>=1.8.0"]
 judge-openai = ["openai>=2.54.0"]
 judge-xai = ["xai-sdk>=1.20.0"]
 judge = ["trialdesignbench[judge-anthropic,judge-openai,judge-xai]"]
@@ -76,7 +76,7 @@ exclude-newer = "7 days"
 
 [dependency-groups]
 dev = [
-    "anthropic>=1.7.0",
+    "anthropic>=1.8.0",
     "openai>=2.54.0",
     "xai-sdk>=1.20.0",
     "isort>=8.0.1",
