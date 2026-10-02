@@ -1,5 +1,12 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Maintenance
+
+- Report the latest uv version alongside agent releases in
+  `scripts/latest_agent_versions.py` (#125).
+
 ## trialdesignbench 1.4.0
 
 ### New features
