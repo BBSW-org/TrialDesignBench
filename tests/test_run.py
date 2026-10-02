@@ -9,6 +9,7 @@ import pytest
 from tests.conftest import FIXTURE_TASK_ID
 from trialdesignbench import agents, environment
 from trialdesignbench.build import BuildOptions, build_tasks
+from trialdesignbench.judge import JUDGE_BACKENDS, JudgeBackend
 from trialdesignbench.run import (
     AgentRequest,
     RunError,
@@ -347,12 +348,39 @@ def test_subscription_auth(
 
 
 def test_judge_key_required(tasks_dir: Path, tmp_path: Path) -> None:
-    with pytest.raises(RunError, match="judge"):
+    with pytest.raises(RunError, match="judge.*ANTHROPIC_API_KEY"):
         plan(
             tasks_dir,
             tmp_path,
             [AgentRequest("codex", "openai/x")],
             env={"OPENAI_API_KEY": "k"},
+        )
+
+
+@pytest.mark.parametrize("backend", JUDGE_BACKENDS.values(), ids=lambda b: b.name)
+def test_judge_key_and_host_follow_the_judge_model(
+    dataset_dir: Path, tmp_path: Path, backend: JudgeBackend
+) -> None:
+    """`tdb run` requires the built judge's key and records its verifier host."""
+    tasks = tmp_path / "tasks"
+    build_tasks(
+        dataset_dir,
+        tasks,
+        options=BuildOptions(
+            image="tdb-env:test", judge_model=f"{backend.name}/some-model"
+        ),
+    )
+    req = [AgentRequest("claude-code", "anthropic/x")]
+    p = plan(tasks, tmp_path, req)
+    assert p.manifest.judge_model == f"{backend.name}/some-model"
+    assert p.manifest.network_policy.verifier_allowed_hosts == (backend.api_host,)
+    assert "sk-test" not in p.job_yaml.read_text()
+    with pytest.raises(RunError, match=f"judge.*{backend.key_env}"):
+        plan(
+            tasks,
+            tmp_path,
+            req,
+            env={k: v for k, v in API_ENV.items() if k != backend.key_env},
         )
 
 

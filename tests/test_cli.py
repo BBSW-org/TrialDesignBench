@@ -97,6 +97,28 @@ def test_grade_error_exit_code(
     assert json.loads((tmp_path / "o" / "reward.json").read_text())["reward"] == 0.0
 
 
+def test_grade_refuses_judge_model_without_provider(
+    make_submission: Callable[..., Path], rubrics_path: Path, tmp_path: Path
+) -> None:
+    sub = make_submission()
+    r = runner.invoke(
+        app,
+        [
+            "grade",
+            str(sub),
+            "--rubrics",
+            str(rubrics_path),
+            "--out",
+            str(tmp_path / "o"),
+            "--judge-model",
+            "claude-opus-5-5",
+        ],
+    )
+    assert r.exit_code == 1
+    assert "must be <provider>/<model>" in r.output
+    assert not (tmp_path / "o").exists()
+
+
 def test_run_dry_run(tmp_path: Path, dataset_dir: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     tasks = tmp_path / "tasks"

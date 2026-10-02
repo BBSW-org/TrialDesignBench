@@ -31,6 +31,7 @@ nav = [
         "reference/dataset.md",
         "reference/build.md",
         "reference/environment.md",
+        "reference/providers.md",
         "reference/judge.md",
         "reference/grade.md",
         "reference/scoring.md",

@@ -129,7 +129,7 @@ and model, and report the level with every result.
 
 Agent credentials and the [judge](judge.md) credential are separate
 concerns. Agents authenticate to their own model API as described here; the
-verifier's judge needs the key of its own backend (`ANTHROPIC_API_KEY` by
+verifier's judge needs the key of its own provider (`ANTHROPIC_API_KEY` by
 default), whichever agent runs.
 
 Credentials are read from the environment of the shell that runs `tdb run`.
@@ -150,7 +150,7 @@ Export the key for the provider of each `--model`:
 | `opencode-go` | `OPENCODE_API_KEY` | `opencode.ai` | [OpenCode Console](https://opencode.ai/auth) (Go subscription) |
 
 ```bash
-export ANTHROPIC_API_KEY=... # agent (anthropic/ models) and the judge
+export ANTHROPIC_API_KEY=... # agent (anthropic/ models) and the default judge
 export OPENAI_API_KEY=...    # codex, or opencode with openai/ models
 export XAI_API_KEY=...       # grok-build, or opencode with xai/ models
 export OPENCODE_API_KEY=...  # opencode with opencode-go/ models
