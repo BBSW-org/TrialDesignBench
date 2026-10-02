@@ -8,14 +8,15 @@
   The default judge model is now `anthropic/claude-opus-5-5`, and a bare
   Anthropic id such as `claude-opus-5-5` is refused by
   `tdb build --judge-model`, `tdb grade --judge-model`, and
-  `TDB_JUDGE_MODEL`; rebuild tasks that were built with one.
+  `TDB_JUDGE_MODEL`; rebuild tasks that were built with one (#127).
 - The `judge` extra now installs the SDKs of every rubric judge, which the
-  shared image uses. Install `judge-anthropic` for the Anthropic SDK alone.
+  shared image uses. Install `judge-anthropic` for the Anthropic SDK alone
+  (#127).
 
 ### New features
 
 - Add an OpenAI judge and an xAI judge, so every supported agent harness has
-  a rubric judge from the same model provider.
+  a rubric judge from the same model provider (#127).
 
     `tdb build --judge-model openai/<id>` selects `OpenaiJudge`, which
     grades with the OpenAI Responses API through the official `openai`
@@ -33,7 +34,7 @@
   `XaiJudge`, `OpencodeGoJudge`), the `judge-<provider>` extra, and the API
   key and host. Providers move to the new `trialdesignbench.providers`
   module, shared by agents and judges, and tests enforce the rule, the
-  extras, and the Judge article.
+  extras, and the Judge article (#127).
 
 ### Maintenance
 
