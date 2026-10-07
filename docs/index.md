@@ -93,7 +93,7 @@ uv run tdb report \
 	--format md
 ```
 
-Grade any directory with output.json and output.R, no Harbor needed:
+Grade any directory with `output.json` and `output.R`, no Harbor needed:
 
 ```bash
 uv run tdb grade \
