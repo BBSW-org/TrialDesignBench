@@ -208,7 +208,7 @@ RUN apt-get update \
 	&& rm \
 		-rf \
 		/var/lib/apt/lists/*
-COPY --from=ghcr.io/astral-sh/uv:0.12.22 /uv /uvx /usr/local/bin/
+COPY --from=ghcr.io/astral-sh/uv:0.12.23 /uv /uvx /usr/local/bin/
 RUN mkdir \
 	-p \
 	/app \

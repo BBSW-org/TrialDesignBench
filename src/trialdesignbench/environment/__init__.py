@@ -25,12 +25,12 @@ class ImagePins:
     cran_snapshot: str = "2026-09-27"
     ubuntu_codename: str = "noble"
     node_version: str = "24.21.0"
-    uv_version: str = "0.12.22"
+    uv_version: str = "0.12.23"
     # Agent CLIs (Harbor agent versions).
-    claude_code_version: str = "2.1.287"
-    codex_version: str = "0.160.0"
+    claude_code_version: str = "2.1.292"
+    codex_version: str = "0.161.0"
     grok_build_version: str = "1.0.46"
-    opencode_version: str = "1.18.34"
+    opencode_version: str = "1.18.35"
     pharma_skills_repo: str = "https://github.com/RConsortium/pharma-skills.git"
     pharma_skills_commit: str = "4bd5632509a343a674d0762266f1cea9a6d382ad"
 
