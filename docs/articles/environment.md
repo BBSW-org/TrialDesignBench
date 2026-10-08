@@ -11,7 +11,7 @@ One shared, pinned Docker image serves both the agent and the verifier.
 | R packages | gsDesign, gsDesign2, rpact, lrstat, graphicalMCP, eventPred, survival, mvtnorm, jsonlite, dplyr, ggplot2, digest |
 | Python | 3.12 (Ubuntu noble) with `uv` 0.12.23 |
 | Node | 24.21.0 LTS |
-| Agent CLIs | Claude Code 2.1.292, Codex CLI 0.161.0 (preinstalled) |
+| Agent CLIs | Claude Code 2.1.294, Codex CLI 0.161.0 (preinstalled) |
 | Agent settings | `/etc/grok/requirements.toml` for Grok Build 1.0.46; OpenCode 1.18.35 plugin package and model catalog (both CLIs are installed by Harbor at setup) |
 | Skills | `RConsortium/pharma-skills` at a pinned commit, in `/skills/<name>/SKILL.md` |
 | Grader | `trialdesignbench[judge]` (the grader with every judge SDK) at the package version, in `/opt/tdb/venv` |

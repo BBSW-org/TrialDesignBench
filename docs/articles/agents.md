@@ -15,7 +15,7 @@ refuses any other agent.
 
 | Agent | Harness | Pinned version | Installed | `--model` providers | `--auth` |
 | --- | --- | --- | --- | --- | --- |
-| `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.292 | in the image | `anthropic` | `api`, `subscription` |
+| `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.294 | in the image | `anthropic` | `api`, `subscription` |
 | `codex` | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) | 0.161.0 | in the image | `openai` | `api`, `subscription` |
 | `grok-build` | [Grok Build](https://docs.x.ai/build/overview) | 1.0.46 | by Harbor at setup | `xai` | `api` |
 | `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.18.35 | by Harbor at setup | `anthropic`, `openai`, `xai`, `opencode-go` | `api` |
@@ -39,7 +39,8 @@ Run one agent, or a matrix by repeating the pair:
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent opencode \
-	--model anthropic/claude-opus-5-5
+	--model anthropic/claude-haiku-5-5 \
+	--effort medium
 
 uv run tdb run \
 	--tasks tmp/tasks \
@@ -84,10 +85,10 @@ lacks differs by agent:
   off on `grok-4.x`.
 - `opencode`: variant names are the model's `reasoning_options` effort values
   in the catalog the image ships at `/opt/tdb/opencode-models.json` (for
-  example `claude-opus-5-5`: `low` to `max`; `gpt-6-astra`: `none`, `low`,
-  `medium`, `high`, `xhigh`; `grok-4.7`: `low` to `xhigh`). OpenCode silently
-  ignores a variant the model does not define, so check the catalog before a
-  large run.
+  example `claude-opus-5-5`, `claude-sonnet-5-5`, and `claude-haiku-5-5`:
+  `low` to `max`; `gpt-6-astra`: `none`, `low`, `medium`, `high`, `xhigh`;
+  `grok-4.7`: `low` to `xhigh`). OpenCode silently ignores a variant the model
+  does not define, so check the catalog before a large run.
 
 Without `--effort` (or with `--effort default`) no kwarg is set and each
 harness applies its own default: Claude Code the model's default (`high` for

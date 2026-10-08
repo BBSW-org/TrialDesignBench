@@ -80,7 +80,11 @@ def test_extraction_message_omits_r_code(rubrics: RubricSet) -> None:
         ("claude-sonnet-5", None),
         ("claude-sonnet-5-5", None),
         ("claude-sonnet-future", None),
-        ("claude-haiku-4-5", 0.0),
+        ("claude-haiku-4-5", None),
+        ("claude-haiku-4-5-20251001", None),
+        ("claude-haiku-5-5", None),
+        ("claude-haiku-future", None),
+        ("claude-3-5-haiku-20241022", 0.0),
     ],
 )
 def test_judge_info_matches_request(
@@ -97,6 +101,7 @@ def test_judge_info_matches_request(
     q = rubrics.questions[0]
     request = judge._request(q.question, q.criteria(), JudgeArtifacts({}, None))
     assert request["model"] == model  # prefix stripped for the API
+    assert "top_p" not in request and "top_k" not in request
     if temperature is None:
         assert "temperature" not in request
     else:
@@ -518,7 +523,10 @@ def test_opencode_go_missing_key(
     assert "OPENCODE_API_KEY" in out.results[0].rationale
 
 
-def test_anthropic_judge_votes_with_stub_client(rubrics: RubricSet) -> None:
+@pytest.mark.parametrize(
+    "model", ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]
+)
+def test_anthropic_judge_votes_with_stub_client(rubrics: RubricSet, model: str) -> None:
     pytest.importorskip("anthropic")
     q = rubrics.questions[0]
     ids = [c.criterion_id for _, c in q.criteria()]
@@ -534,12 +542,19 @@ def test_anthropic_judge_votes_with_stub_client(rubrics: RubricSet) -> None:
 
     class Response:
         id = "msg-test"
-        model = "claude-opus-5-5"
         usage = None
 
         def __init__(self, text: str, stop_reason: str = "end_turn") -> None:
-            self.content = [Block(text)]
+            self.model = model
+            # Adaptive thinking can precede text or consume the entire budget.
+            self.content = [ThinkingBlock(), *([Block(text)] if text else [])]
             self.stop_reason = stop_reason
+
+    class ThinkingBlock:
+        type = "thinking"
+
+        def to_dict(self) -> dict[str, str]:
+            return {"type": "thinking", "thinking": "", "signature": "test-signature"}
 
     replies = [
         Response(_results_text(ids, "fail")),
@@ -548,15 +563,18 @@ def test_anthropic_judge_votes_with_stub_client(rubrics: RubricSet) -> None:
         Response(_results_text(ids, "pass")),
     ]
 
+    requests: list[dict[str, Any]] = []
+
     class Messages:
         def create(self, **params: Any) -> Response:
+            requests.append(params)
             return replies.pop(0)
 
     class Client:
         messages = Messages()
 
     judge = AnthropicJudge(
-        "anthropic/claude-opus-5-5",
+        f"anthropic/{model}",
         votes=3,
         client=Client(),
         sleep=lambda seconds: None,
@@ -566,9 +584,16 @@ def test_anthropic_judge_votes_with_stub_client(rubrics: RubricSet) -> None:
     assert all(r.votes == ("fail", "pass", "pass") for r in out.results)
     assert out.exchanges[2]["error"] == "judge response truncated at max_tokens"
     assert [e["vote"] for e in out.exchanges[1:]] == [0, 1, 1, 2]
-    assert out.exchanges[0]["request"]["model"] == "claude-opus-5-5"
+    request = out.exchanges[0]["request"]
+    assert request["model"] == model
+    assert requests == [request] * 4
+    assert {"temperature", "top_p", "top_k", "thinking"}.isdisjoint(request)
+    assert request["messages"][-1]["role"] == "user"
+    assert request["output_config"]["format"]["type"] == "json_schema"
+    assert out.exchanges[1]["response"]["content"][0] == ThinkingBlock().to_dict()
     info = judge.info()
-    assert (info.name, info.model) == ("anthropic", "anthropic/claude-opus-5-5")
+    assert (info.name, info.model) == ("anthropic", f"anthropic/{model}")
+    assert info.temperature is None
     assert info.sdk_version == version("anthropic")
 
 
