@@ -1,12 +1,6 @@
 # Changelog
 
-## trialdesignbench (development version)
-
-### Improvements
-
-- Support Claude Haiku 5.5 as a selectable Anthropic judge by omitting sampling
-  parameters for the `claude-haiku` family, matching the existing Opus and
-  Sonnet policy. Haiku 4.5 also uses API defaults instead of `temperature=0` (#138).
+## trialdesignbench 1.6.0
 
 ### Bug fixes
 
@@ -14,6 +8,12 @@
   the array of question blocks, without the `prompt` wrapper. Include an
   explicit example to prevent extra nesting that fails the grader's
   structure check and zeroes the reward (#137).
+
+### Improvements
+
+- Support Claude Haiku 5.5 as a selectable Anthropic judge by omitting sampling
+  parameters for the `claude-haiku` family, matching the existing Opus and
+  Sonnet policy. Haiku 4.5 also uses API defaults instead of `temperature=0` (#138).
 
 ### Maintenance
 
