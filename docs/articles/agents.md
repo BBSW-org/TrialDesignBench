@@ -33,14 +33,6 @@ refuses any other agent.
   at every trial setup no matter what the image contains, so a few install
   hosts are reachable during setup only (see [Network](#network)).
 
-Claude Opus 5.5, Sonnet 5.5, and Haiku 5.5 use
-`anthropic/claude-opus-5-5`, `anthropic/claude-sonnet-5-5`, and
-`anthropic/claude-haiku-5-5` with either `claude-code` or `opencode`.
-[Claude Code 2.1.293 added Haiku 5.5](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md#21293);
-the pin above includes that support. Rebuild the shared image after updating
-the pin. For OpenCode, also refresh the image's
-[model catalog](environment.md#build-and-check) when adding a new model.
-
 Run one agent, or a matrix by repeating the pair:
 
 ```bash
