@@ -14,5 +14,6 @@ Every numeric value reported must be expressed to at least 4 decimal places unle
 Do not assume any specific statistical method unless it is explicitly stated or directly derivable from the input document. If multiple methods are plausible, state the assumption made and justify it based on the input document.
 
 Output instructions:
-- Return a file named output.json containing a single block named 'output'. Copy the entire prompt block into 'output' and replace each null value with the extracted or derived result. Do not add, remove, rename, or modify any other fields.
+- Return a file named output.json whose top level is an object with a single key 'output'. The value of 'output' must be the array of question blocks (the list that appears under "prompt" in the evaluation questions), with each null replaced by the extracted or derived result. Do not keep the "prompt" wrapper, and do not add, remove, rename, or modify any other fields. The required shape is exactly:
+  {"output": [{"id": "P-001", ...}, {"id": "P-002", ...}, ...]}
 - Return a separate file named output.R implementing the calculations for all Derivation required questions. For each question the script must print: (1) the source inputs, (2) the calculation method and formula applied. Each method should be implemented as a reusable R function, with all necessary inputs specified as function arguments to support future reproducibility and validation testing, and (3) the final calculated value.
