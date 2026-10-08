@@ -8,6 +8,13 @@
   parameters for the `claude-haiku` family, matching the existing Opus and
   Sonnet policy. Haiku 4.5 also uses API defaults instead of `temperature=0` (#138).
 
+### Bug fixes
+
+- Clarify the default prompt's `output.json` format: `output` must be
+  the array of question blocks, without the `prompt` wrapper. Include an
+  explicit example to prevent extra nesting that fails the grader's
+  structure check and zeroes the reward (#137).
+
 ### Maintenance
 
 - Bump the pinned Claude Code to 2.1.294 (was 2.1.292), including Haiku 5.5
