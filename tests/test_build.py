@@ -17,7 +17,7 @@ from trialdesignbench.build import (
     default_template,
 )
 from trialdesignbench.dataset import DatasetError, import_intake
-from trialdesignbench.judge import JUDGE_BACKENDS, JudgeBackend
+from trialdesignbench.judge import JUDGE_BACKENDS, judge_backend
 
 IMAGE = "example.org/tdb-env:test"
 
@@ -196,13 +196,19 @@ def test_dockerfile_mode(dataset_dir: Path, tmp_path: Path) -> None:
     assert (task / "environment" / "install_skills.sh").is_file()
 
 
-@pytest.mark.parametrize("backend", JUDGE_BACKENDS.values(), ids=lambda b: b.name)
+@pytest.mark.parametrize(
+    "model",
+    [
+        *(f"{backend.name}/some-model" for backend in JUDGE_BACKENDS.values()),
+        "anthropic/claude-haiku-5-5",
+    ],
+)
 def test_judge_verifier_env_and_host(
-    dataset_dir: Path, tmp_path: Path, backend: JudgeBackend
+    dataset_dir: Path, tmp_path: Path, model: str
 ) -> None:
     """The verifier gets exactly the key and host of the judge model's provider."""
+    backend = judge_backend(model)
     out = tmp_path / backend.name
-    model = f"{backend.name}/some-model"
     build_tasks(dataset_dir, out, options=BuildOptions(image=IMAGE, judge_model=model))
     config = tomllib.loads((out / FIXTURE_TASK_ID / "task.toml").read_text())
     assert config["verifier"]["env"] == {

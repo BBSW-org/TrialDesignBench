@@ -1,5 +1,18 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Improvements
+
+- Support Claude Haiku 5.5 as a selectable Anthropic judge by omitting sampling
+  parameters for the `claude-haiku` family, matching the existing Opus and
+  Sonnet policy. Haiku 4.5 also uses API defaults instead of `temperature=0` (#138).
+
+### Maintenance
+
+- Bump the pinned Claude Code to 2.1.294 (was 2.1.292), including Haiku 5.5
+  support introduced in 2.1.293 (#138).
+
 ## trialdesignbench 1.5.1
 
 ### Maintenance

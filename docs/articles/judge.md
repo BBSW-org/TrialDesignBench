@@ -64,10 +64,11 @@ grade with a different model inside Harbor, rebuild the tasks with
 
 `AnthropicJudge` uses the Anthropic Messages API with structured JSON output
 (`output_config.format`) through the official `anthropic` package. It omits
-`temperature` for the `claude-fable`, `claude-mythos`, `claude-opus`, and
-`claude-sonnet` families for forward compatibility, including older versions
-that still accept it. These models use the API's default sampling behavior;
-other models receive `temperature=0`.
+`temperature` for the `claude-fable`, `claude-mythos`, `claude-opus`,
+`claude-sonnet`, and `claude-haiku` families for forward compatibility,
+including older versions that still accept it, such as Haiku 4.5. These
+models use the API's default sampling behavior; other models receive
+`temperature=0`. No requests send `top_p` or `top_k`.
 
 ### `openai`
 

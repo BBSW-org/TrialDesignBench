@@ -153,6 +153,7 @@ _NO_SAMPLING_PREFIXES = (
     "claude-mythos",
     "claude-opus",
     "claude-sonnet",
+    "claude-haiku",
 )
 
 JUDGE_SYSTEM_PROMPT = """\
@@ -673,7 +674,8 @@ class AnthropicJudge(ApiJudge):
 
     Needs the `anthropic` package (`trialdesignbench[judge-anthropic]`).
     Judge models are `anthropic/<id>`. Sends `temperature=0` except for model
-    families that reject sampling parameters (`supports_temperature`).
+    families using API sampling defaults (`supports_temperature`), including
+    Haiku 5.5, which rejects `temperature=0`.
     """
 
     backend = JudgeBackend(PROVIDERS["anthropic"], DEFAULT_JUDGE_MODEL, sdk="anthropic")

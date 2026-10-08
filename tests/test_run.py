@@ -66,11 +66,19 @@ def task_policy(p) -> tuple[list[str], list[str]]:  # type: ignore[no-untyped-de
     return config["agent"]["allowed_hosts"], config["environment"]["allowed_hosts"]
 
 
-def test_dry_run_job_yaml(tasks_dir: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "model",
+    [
+        "anthropic/claude-opus-5-5",
+        "anthropic/claude-sonnet-5-5",
+        "anthropic/claude-haiku-5-5",
+    ],
+)
+def test_dry_run_job_yaml(tasks_dir: Path, tmp_path: Path, model: str) -> None:
     p = plan(
         tasks_dir,
         tmp_path,
-        [AgentRequest("claude-code", "anthropic/claude-opus-5-5")],
+        [AgentRequest("claude-code", model)],
         n_attempts=3,
         n_concurrent=2,
     )
@@ -82,7 +90,7 @@ def test_dry_run_job_yaml(tasks_dir: Path, tmp_path: Path) -> None:
     assert job["environment"] == {"type": "docker"}
     (agent,) = job["agents"]
     assert agent["name"] == "claude-code"
-    assert agent["model_name"] == "anthropic/claude-opus-5-5"
+    assert agent["model_name"] == model
     kwargs = agent["kwargs"]
     assert kwargs["version"] == environment.PINS.claude_code_version
     assert kwargs["disallowed_tools"] == "WebSearch,WebFetch"
@@ -112,6 +120,7 @@ def test_dry_run_job_yaml(tasks_dir: Path, tmp_path: Path) -> None:
 
     manifest = RunManifest.model_validate_json((p.job_dir / "tdb-run.json").read_text())
     assert manifest.auth_mode == "api"
+    assert manifest.agents[0].model == model
     assert manifest.network_policy.agent_allowed_hosts == ("api.anthropic.com",)
     assert manifest.network_policy.environment_allowed_hosts == ("api.anthropic.com",)
     assert manifest.agents[0].setup_hosts == ()
@@ -160,6 +169,8 @@ def test_grok_build_two_phase_policy(tasks_dir: Path, tmp_path: Path) -> None:
     ("model", "host", "key"),
     [
         ("anthropic/claude-opus-5-5", "api.anthropic.com", "ANTHROPIC_API_KEY"),
+        ("anthropic/claude-sonnet-5-5", "api.anthropic.com", "ANTHROPIC_API_KEY"),
+        ("anthropic/claude-haiku-5-5", "api.anthropic.com", "ANTHROPIC_API_KEY"),
         ("openai/gpt-6-astra", "api.openai.com", "OPENAI_API_KEY"),
         ("xai/grok-4.7", "api.x.ai", "XAI_API_KEY"),
         (
@@ -174,6 +185,7 @@ def test_opencode_providers(
 ) -> None:
     p = plan(tasks_dir, tmp_path, [AgentRequest("opencode", model)])
     agent = load_job(p)["agents"][0]
+    assert agent["model_name"] == p.manifest.agents[0].model == model
     config = agent["kwargs"]["opencode_config"]
     assert config["permission"] == {"webfetch": "deny", "websearch": "deny"}
     assert "*" not in config["permission"]  # a wildcard could re-allow them
