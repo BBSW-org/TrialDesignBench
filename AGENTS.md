@@ -17,9 +17,14 @@ statistical designs.
    and provenance. Harbor (v0.23.0) runs first-party agent harnesses in Docker.
 2. **Integrate with Harbor through files only**: the task directory format, a
    generated `job.yaml` passed to `harbor run -c`, and the job directory it
-   writes. Never `import harbor` in package code. `harbor` is the optional
+   writes. Never `import harbor` in core modules. `harbor` is the optional
    extra `trialdesignbench[harbor]`; the core stays light. The package
-   requires Python 3.12+.
+   requires Python 3.12+. The one exception is the Harbor plugin
+   `harbor_agents.py`: Harbor imports it inside its own process through the
+   `import_path` in `job.yaml` (`tdb run` copies it beside the task copies
+   and puts that directory on `PYTHONPATH`); it imports Harbor and the
+   standard library only, and no `tdb` command imports it (a test enforces
+   both rules).
 3. **The grader is a pure function of (submission artifacts, task rubrics,
    judge config).** It runs identically in a Harbor separate-verifier
    container, standalone on any directory with `output.json` and `output.R`,
@@ -53,7 +58,9 @@ src/trialdesignbench/
   grade.py         deterministic checks + rubric judging + outputs (delicate)
   scoring.py       versioned scoring rules, pure functions
   agents.py        supported agents: providers, credentials, hosts, closed-book settings
-  run.py           job.yaml, allowlists, auth validation, harbor invocation
+  harbor_agents.py Harbor plugin: Harbor's adapters with a file-based instruction
+                   transport (Harbor's own transport dies on instructions > 128 KiB)
+  run.py           job.yaml, allowlists, auth validation, plugin copy, harbor invocation
   canary.py        network canary Harbor task
   report.py        job dirs / grade dirs -> ReportSummary + leaderboard
   provenance.py    digests, versions, git SHA, image digest
@@ -78,6 +85,18 @@ src/trialdesignbench/
   agent is supported only if its web tools can be disabled, its egress can be
   limited to the model API during `agent.run()`, and Harbor writes an ATIF
   trajectory (the grader errors without one).
+- `tdb run` launches every agent through `import_path`
+  (`tdb_harbor_agents:<harbor_class>`), never through Harbor's agent `name`:
+  Harbor resolves a valid `name` first and would skip the plugin. The plugin
+  classes subclass Harbor's adapters and change only how the rendered
+  instruction reaches the CLI (an uploaded file read through a shell
+  variable, stdin, or `--prompt-file`); `name()`, `version()`, kwargs,
+  credentials, and trajectories are inherited, so `result.json` still says
+  `claude-code`, `codex`, `grok-build`, or `opencode`. A launch command the
+  plugin does not recognize fails the trial with `InstructionTransportError`
+  rather than falling back to the old transport. Re-check the plugin's tests
+  against each new Harbor version before bumping the pin; it passes on
+  0.23.0 and 0.24.0.
 - Harbor's adapters for some agents (grok-build, opencode) reinstall the CLI
   at every setup regardless of the image, so preinstalling them does not
   help; they get `setup_hosts` and the pin as Harbor's `version` kwarg.
@@ -108,10 +127,15 @@ src/trialdesignbench/
   `uv sync --dev` and `uv run ...`. `[tool.uv] exclude-newer = "7 days"`.
 - **Python Pinning:** Pin workflows to the Python from `actions/setup-python`
   using `--python ... --no-python-downloads`.
-- **Harbor for local checks:** install it in an isolated environment, for
-  example `uv venv tmp/harbor-venv --python 3.12` and
-  `uv pip install harbor==0.23.0`, then put `tmp/harbor-venv/bin` on `PATH`.
-  Do not add it as a core dependency.
+- **Harbor:** the dev group pins `harbor==0.23.0` (the same version as the
+  `harbor` extra) so the plugin in `harbor_agents.py` is type checked and
+  tested against the adapters it subclasses; `uv run harbor` and
+  `uv run tdb run` work from the dev environment. Do not add it as a core
+  dependency. To check another Harbor version, install it in an isolated
+  environment (for example `uv venv tmp/harbor-venv --python 3.12` and
+  `uv pip install harbor==<version>` from outside the project directory, so
+  `exclude-newer` does not apply) and run `pytest tests/test_harbor_agents.py`
+  with that interpreter plus `tdb run` with `tmp/harbor-venv/bin` on `PATH`.
 - **Docker/R tests:** tests needing R or Docker carry skip markers
   (`requires_rscript`, `requires_docker` in `tests/conftest.py`).
 

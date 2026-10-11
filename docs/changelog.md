@@ -1,5 +1,35 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Bug fixes
+
+- Fix trials dying before the agent starts when the instruction is large
+  (`OSError: [Errno 7] Argument list too long: 'docker'`). Harbor's adapters
+  for all four supported agents hand the rendered instruction to the CLI
+  through one `docker compose exec` argument or environment variable, and
+  Linux caps a single argument or environment string at 128 KiB
+  (`MAX_ARG_STRLEN`), so a protocol or SAP of a few hundred kilobytes could
+  not be run at all. `tdb run` now launches every agent through the Harbor
+  plugin `trialdesignbench.harbor_agents` (`import_path` in `job.yaml`):
+  subclasses of Harbor's adapters that upload the instruction into the
+  container and make the CLI read it from there (a shell variable piped
+  into `claude --print`, stdin for `codex exec -- -` and `opencode run`,
+  `grok --prompt-file`), byte for byte and unchanged in every other respect.
+  Harbor 0.23.0 and 0.24.0 share the limitation; the plugin works with both
+  (#144).
+
+### Improvements
+
+- `tdb run` copies the plugin beside the task copies
+  (`<job>.tasks/harbor-plugin/tdb_harbor_agents.py`), runs `harbor` with
+  that directory on `PYTHONPATH`, and records the copy's digest in
+  `tdb-run.json` (`harbor_plugin`) and each agent's `import_path`
+  (`agents[].import_path`). The printed command shows the `PYTHONPATH` so a
+  job can be replayed by hand (#144).
+- The dev dependency group pins Harbor, so the plugin is type checked and
+  tested against the adapters it subclasses (#144).
+
 ## trialdesignbench 1.6.1
 
 ### Maintenance

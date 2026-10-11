@@ -36,6 +36,7 @@ nav = [
         "reference/grade.md",
         "reference/scoring.md",
         "reference/agents.md",
+        "reference/harbor_agents.md",
         "reference/run.md",
         "reference/canary.md",
         "reference/report.md",

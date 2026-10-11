@@ -26,7 +26,9 @@ aggregation, and provenance.
 [Harbor](https://github.com/harbor-framework/harbor) is the execution backend
 that runs agent harnesses in Docker. The two interact only through files:
 Harbor task directories, a generated `job.yaml`, and the job directory
-that Harbor writes. The currently supported agents are:
+that Harbor writes, plus a small plugin that `job.yaml` points Harbor at,
+which delivers large instructions to the agents through a file rather than
+an exec argument. The currently supported agents are:
 
 - Claude Code (`claude-code`)
 - Codex CLI (`codex`)

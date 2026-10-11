@@ -2985,6 +2985,7 @@ judge-xai = [
 [package.dev-dependencies]
 dev = [
     { name = "anthropic" },
+    { name = "harbor" },
     { name = "isort" },
     { name = "mkdocstrings-python" },
     { name = "mypy" },
@@ -3013,6 +3014,7 @@ provides-extras = ["judge-anthropic", "judge-openai", "judge-xai", "judge", "har
 [package.metadata.requires-dev]
 dev = [
     { name = "anthropic", specifier = ">=1.8.0" },
+    { name = "harbor", specifier = "==0.23.0" },
     { name = "isort", specifier = ">=8.0.1" },
     { name = "mkdocstrings-python", specifier = ">=2.0.3" },
     { name = "mypy", specifier = ">=2.0.0" },

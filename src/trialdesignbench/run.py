@@ -11,9 +11,17 @@ Layout for `--jobs-dir J --job-name N`:
       job.yaml          generated config (`harbor run -c`)
       tdb-run.json      RunManifest
     J/N.tasks/          task copies with the agent allowlist filled in
+      harbor-plugin/    tdb_harbor_agents.py, the agent classes Harbor imports
 
 Task copies live beside the job directory because Harbor deletes any
 subdirectory of a job without a `result.json` when a job is resumed.
+
+Agents are launched through Harbor's `import_path`, not its agent `name`:
+`job.yaml` names a class in `tdb_harbor_agents`, a copy of
+`trialdesignbench/harbor_agents.py` (Harbor's adapters with a file-based
+instruction transport, see that module), and `harbor` runs with the copy's
+directory on `PYTHONPATH`. The copy keeps the job runnable from any Harbor
+install, and its digest is recorded in the manifest.
 """
 
 from __future__ import annotations
@@ -46,9 +54,13 @@ from trialdesignbench.provenance import (
     git_sha,
     harbor_version,
     package_version,
+    sha256_file,
     utc_now,
 )
-from trialdesignbench.schema import AgentSpec, NetworkPolicy, RunManifest
+from trialdesignbench.schema import AgentSpec, HarborPlugin, NetworkPolicy, RunManifest
+
+PLUGIN_DIR = "harbor-plugin"
+"""Subdirectory of the task copies holding the Harbor plugin module."""
 
 
 class RunError(RuntimeError):
@@ -134,8 +146,10 @@ def agent_config(
         **effort_kwargs,
     }
     agent_env = {**profile.env, **auth_env}
+    # `import_path`, never `name`: Harbor resolves a valid `name` first and
+    # would launch its own adapter instead of the plugin class.
     config: dict[str, Any] = {
-        "name": request.agent,
+        "import_path": agents.import_path(profile),
         "model_name": request.model,
         "kwargs": kwargs,
         "env": agent_env,
@@ -150,6 +164,7 @@ def agent_config(
         env_keys=tuple(sorted(agent_env)),
         allowed_hosts=hosts,
         setup_hosts=profile.setup_hosts,
+        import_path=agents.import_path(profile),
     )
     return config, spec
 
@@ -231,6 +246,35 @@ def materialize_tasks(
     return out
 
 
+def install_harbor_plugin(tasks_copy: Path) -> HarborPlugin:
+    """Copy `trialdesignbench/harbor_agents.py` beside the task copies.
+
+    The copy is the module `job.yaml` imports (`agents.HARBOR_PLUGIN_MODULE`);
+    `harbor_env` puts its directory on `PYTHONPATH`, so the `harbor` process
+    finds it whether or not Harbor shares a Python environment with tdb.
+    """
+    source = Path(__file__).with_name("harbor_agents.py")
+    plugin_dir = tasks_copy / PLUGIN_DIR
+    plugin_dir.mkdir(parents=True, exist_ok=True)
+    target = plugin_dir / f"{agents.HARBOR_PLUGIN_MODULE}.py"
+    shutil.copyfile(source, target)
+    return HarborPlugin(
+        module=agents.HARBOR_PLUGIN_MODULE,
+        path=str(target),
+        sha256=sha256_file(target),
+    )
+
+
+def harbor_env(plugin: HarborPlugin, env: Mapping[str, str]) -> dict[str, str]:
+    """Environment overrides for the `harbor` process: the plugin directory
+    first on `PYTHONPATH`."""
+    plugin_dir = str(Path(plugin.path).parent)
+    existing = env.get("PYTHONPATH")
+    return {
+        "PYTHONPATH": f"{plugin_dir}{os.pathsep}{existing}" if existing else plugin_dir
+    }
+
+
 def read_build_manifest(tasks_dir: Path) -> dict[str, Any]:
     """Load `tdb-build.json` from a tasks directory."""
     path = tasks_dir / BUILD_MANIFEST
@@ -284,6 +328,8 @@ class RunPlan:
     command: list[str]
     config: dict[str, Any]
     manifest: RunManifest
+    env: dict[str, str] = field(default_factory=dict)
+    """Environment overrides for `command` (the plugin's `PYTHONPATH`)."""
     warnings: list[str] = field(default_factory=list)
 
 
@@ -357,6 +403,7 @@ def plan_run(
     task_paths = materialize_tasks(
         tasks_dir, tasks_copy, agent_hosts, environment_hosts, task_ids
     )
+    plugin = install_harbor_plugin(tasks_copy)
     if canary:
         if image is None:
             raise RunError("--canary needs tasks built with a prebuilt --image")
@@ -415,10 +462,20 @@ def plan_run(
         ),
         repo_git_sha=git_sha(Path(__file__).parent),
         command=tuple(command),
+        harbor_plugin=plugin,
         started_at=utc_now(),
     )
     write_manifest(job_dir, manifest)
-    return RunPlan(job_dir, job_yaml, tasks_copy, command, config, manifest, warnings)
+    return RunPlan(
+        job_dir,
+        job_yaml,
+        tasks_copy,
+        command,
+        config,
+        manifest,
+        env=harbor_env(plugin, env),
+        warnings=warnings,
+    )
 
 
 def write_manifest(job_dir: Path, manifest: RunManifest) -> None:
@@ -432,7 +489,9 @@ def execute(plan: RunPlan) -> int:
         raise RunError(
             "`harbor` not found; install `trialdesignbench[harbor]` (Python 3.12+)"
         )
-    proc = subprocess.run(plan.command, check=False)
+    proc = subprocess.run(
+        plan.command, check=False, env={**os.environ, **plan.env} if plan.env else None
+    )
     finished = plan.manifest.model_copy(
         update={"finished_at": utc_now(), "exit_code": proc.returncode}
     )
