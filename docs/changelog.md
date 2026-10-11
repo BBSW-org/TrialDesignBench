@@ -1,6 +1,6 @@
 # Changelog
 
-## trialdesignbench (development version)
+## trialdesignbench 1.7.0
 
 ### Bug fixes
 
@@ -17,7 +17,7 @@
   into `claude --print`, stdin for `codex exec -- -` and `opencode run`,
   `grok --prompt-file`), byte for byte and unchanged in every other respect.
   Harbor 0.23.0 and 0.24.0 share the limitation; the plugin works with both
-  (#144).
+  (#145).
 
 ### Improvements
 
@@ -26,9 +26,9 @@
   that directory on `PYTHONPATH`, and records the copy's digest in
   `tdb-run.json` (`harbor_plugin`) and each agent's `import_path`
   (`agents[].import_path`). The printed command shows the `PYTHONPATH` so a
-  job can be replayed by hand (#144).
+  job can be replayed by hand (#145).
 - The dev dependency group pins Harbor, so the plugin is type checked and
-  tested against the adapters it subclasses (#144).
+  tested against the adapters it subclasses (#145).
 
 ## trialdesignbench 1.6.1
 
