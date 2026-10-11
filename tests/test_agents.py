@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import re
 import subprocess
@@ -43,6 +44,44 @@ def test_profile_is_consistent(profile: agents.AgentProfile) -> None:
     # The closed-book kwargs never set the effort; --effort owns that kwarg.
     assert effort.kwarg not in profile.kwargs
     assert effort.how and effort.note
+
+
+@PROFILES
+def test_harbor_class(profile: agents.AgentProfile) -> None:
+    """Every agent names a plugin class, launched through Harbor's import_path."""
+    assert profile.harbor_class.isidentifier()
+    assert agents.import_path(profile) == f"tdb_harbor_agents:{profile.harbor_class}"
+    source = (ROOT / "src/trialdesignbench/harbor_agents.py").read_text()
+    assert re.search(rf"^class {profile.harbor_class}\(", source, re.MULTILINE)
+
+
+def _imports(path: Path) -> set[str]:
+    tree = ast.parse(path.read_text(), filename=str(path))
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names.add(node.module)
+    return names
+
+
+def test_only_the_plugin_imports_harbor() -> None:
+    """Core modules never import Harbor; the plugin imports nothing of tdb.
+
+    `harbor_agents.py` runs inside Harbor's process as a standalone copy
+    (`tdb_harbor_agents`), so it can rely on Harbor and the standard library
+    only; everything else integrates with Harbor through files.
+    """
+    src = ROOT / "src/trialdesignbench"
+    for path in sorted(src.rglob("*.py")):
+        top = {name.split(".")[0] for name in _imports(path)}
+        if path.name == "harbor_agents.py":
+            assert "harbor" in top
+            assert "trialdesignbench" not in top, path
+        else:
+            assert "harbor" not in top, path
+            assert "trialdesignbench.harbor_agents" not in _imports(path), path
 
 
 @PROFILES

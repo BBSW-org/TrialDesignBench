@@ -13,7 +13,10 @@ agent. Each `AgentProfile` in `AGENTS` records everything `tdb run` needs:
 - the Harbor kwargs and env vars that disable web tools and nonessential
   traffic, and the disabled tool names recorded for provenance;
 - how `--effort` reaches the agent (`Effort`): the Harbor kwarg that carries
-  the reasoning effort level and the levels it accepts.
+  the reasoning effort level and the levels it accepts;
+- the class in `trialdesignbench.harbor_agents` that `tdb run` launches
+  through Harbor's `import_path` (`harbor_class`): Harbor's adapter for the
+  agent with the file-based instruction transport, see that module.
 
 Harbor agents that are not in `AGENTS` are refused; `REFUSED_AGENTS` explains
 why for the notable ones. To add an agent, check its Harbor adapter (for
@@ -38,6 +41,10 @@ from trialdesignbench.providers import PROVIDERS, split_model
 AuthMode = Literal["api", "subscription"]
 
 HOST_TABLE_VERSION = "2"
+
+HARBOR_PLUGIN_MODULE = "tdb_harbor_agents"
+"""Module name under which `tdb run` exposes `trialdesignbench/harbor_agents.py`
+to the `harbor` process (a copy beside the task copies, on `PYTHONPATH`)."""
 
 
 class AgentError(ValueError):
@@ -107,6 +114,10 @@ class AgentProfile:
     """True when the image ships the CLI and Harbor skips its install."""
     effort: Effort
     """How `--effort` reaches the agent."""
+    harbor_class: str
+    """Class in `trialdesignbench.harbor_agents` launched through Harbor's
+    `import_path`: Harbor's adapter for `name` with the file-based
+    instruction transport."""
     setup_hosts: tuple[str, ...] = ()
     """Hosts Harbor's install step needs; reachable during agent setup only."""
     kwargs: Mapping[str, Any] = field(default_factory=dict)
@@ -157,6 +168,7 @@ AGENTS: tuple[AgentProfile, ...] = (
             "highest supported level at or below it; a value outside the list "
             "is ignored with a warning, so it is refused here.",
         ),
+        harbor_class="ClaudeCode",
         kwargs={
             "disallowed_tools": ",".join(_CLAUDE_CODE_DENIED),
             "config": {"permissions": {"deny": _CLAUDE_CODE_DENIED}},
@@ -192,6 +204,7 @@ AGENTS: tuple[AgentProfile, ...] = (
             "levels; a level the model does not support fails the request "
             "and the trial.",
         ),
+        harbor_class="Codex",
         kwargs={"web_search": "disabled"},
         disabled_tools=("web_search",),
         subscription=Subscription(
@@ -223,6 +236,7 @@ AGENTS: tuple[AgentProfile, ...] = (
             "A model accepts only the levels its menu advertises (grok-4.7: "
             "low, medium, high, xhigh); reasoning cannot be disabled.",
         ),
+        harbor_class="GrokBuild",
         # The image also pins these in /etc/grok/requirements.toml.
         kwargs={
             "disable_web_search": True,
@@ -251,6 +265,7 @@ AGENTS: tuple[AgentProfile, ...] = (
             "ignores a variant the model does not define, so check the "
             "catalog for the model first.",
         ),
+        harbor_class="OpenCode",
         kwargs={
             "opencode_config": {
                 "autoupdate": False,
@@ -314,6 +329,15 @@ def get_profile(name: str) -> AgentProfile:
             f"Supported agents: {supported}"
         )
     raise AgentError(f"agent {name!r} is not supported. Supported agents: {supported}")
+
+
+def import_path(profile: AgentProfile) -> str:
+    """Harbor `import_path` of the agent class `tdb run` launches.
+
+    `tdb run` writes this instead of Harbor's agent `name`: Harbor prefers a
+    valid `name` over `import_path`, which would skip the plugin.
+    """
+    return f"{HARBOR_PLUGIN_MODULE}:{profile.harbor_class}"
 
 
 def model_provider(profile: AgentProfile, model: str) -> str:
