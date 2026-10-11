@@ -32,6 +32,12 @@ refuses any other agent.
   its install step. *By Harbor at setup*: Harbor's adapter reinstalls the CLI
   at every trial setup no matter what the image contains, so a few install
   hosts are reachable during setup only (see [Network](#network)).
+- `tdb run` launches each agent through a class in
+  `trialdesignbench.harbor_agents` (Harbor `import_path`
+  `tdb_harbor_agents:ClaudeCode`, `Codex`, `GrokBuild`, `OpenCode`): Harbor's
+  own adapter with the instruction delivered through an uploaded file
+  instead of an exec argument, which Linux caps at 128 KiB. See
+  [Run](run.md#how-the-instruction-reaches-the-agent).
 
 Run one agent, or a matrix by repeating the pair:
 
@@ -293,6 +299,10 @@ Everything lives in `src/trialdesignbench/agents.py`:
    to disable them, and that it writes an ATIF trajectory. Run the
    [probe](closed-book.md#probing-an-agent) to learn which of its web tools
    run on the provider's servers; those are the ones that need a switch.
+   Check how the adapter passes the instruction to the CLI and how the CLI
+   can read a prompt from a file or stdin; add a subclass to
+   `trialdesignbench.harbor_agents` with the matching rewrite rule, named in
+   the profile's `harbor_class` (tests check both).
 2. Add a pin to `ImagePins` and a matching `ARG` and label to the Dockerfile
    (a test enforces this), plus any closed-book settings the image must carry.
 3. Add an `AgentProfile` to `AGENTS`: providers, pin, `preinstalled` or

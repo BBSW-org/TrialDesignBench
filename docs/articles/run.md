@@ -54,6 +54,8 @@ other agent pins or another grader version.
   tdb-run.json                  RunManifest (provenance)
   <trial dirs...>               written by Harbor
 <jobs_dir>/<job_name>.tasks/    task copies with both allowlists filled in
+  harbor-plugin/
+    tdb_harbor_agents.py        the agent classes Harbor imports (see below)
 ```
 
 Task copies live beside the job directory, not inside it: Harbor deletes any
@@ -63,6 +65,61 @@ job subdirectory without a `result.json` when a job is resumed.
 syntax, which is valid YAML, so no YAML dependency is needed. Secret values
 are never written to `job.yaml` or `tdb-run.json`; only variable names are
 recorded.
+
+## How the instruction reaches the agent
+
+Harbor's adapters for all four supported agents hand the rendered
+`instruction.md` to the CLI inside a single `docker compose exec` call:
+Claude Code as an environment variable, Codex CLI, Grok Build, and OpenCode
+as a quoted argument of the `bash -c` command. Linux caps one argument or
+environment string at 128 KiB (`MAX_ARG_STRLEN`), on the host and again
+inside the container, so an instruction carrying a protocol or SAP of a few
+hundred kilobytes kills the trial before the agent starts
+(`OSError: [Errno 7] Argument list too long: 'docker'`). Harbor 0.23.0 and
+0.24.0 share this limitation.
+
+`tdb run` therefore launches every agent through Harbor's `import_path`
+rather than its agent `name`. The classes live in
+`trialdesignbench.harbor_agents`, a Harbor plugin: subclasses of Harbor's
+adapters that upload the instruction into the container
+(`/installed-agent/tdb-instruction.md`, via `docker compose cp`) and make the
+CLI read it from there, byte for byte:
+
+| Agent | Harbor's transport | With the plugin |
+| --- | --- | --- |
+| `claude-code` | env var piped into `claude --print` | the env var becomes a shell variable read from the file, piped the same way |
+| `codex` | `codex exec -- '<instruction>'` | `codex exec -- - <FILE` (prompt from stdin) |
+| `grok-build` | `grok --single '<instruction>'` | `grok --prompt-file FILE` |
+| `opencode` | `opencode run -- '<instruction>'` | `opencode run -- <FILE` (prompt from stdin) |
+
+Everything else is inherited from Harbor's adapter: credentials, settings,
+skills, sessions, cleanup, and trajectories, and `name()` still answers
+`claude-code`, `codex`, `grok-build`, or `opencode`, which is what
+`result.json` and `tdb report` show. `job.yaml` has `import_path =
+"tdb_harbor_agents:<Class>"` and no `name` (Harbor would prefer a valid
+`name` and skip the plugin); each trial's `result.json` records the same
+`config.agent.import_path`.
+
+`tdb run` copies the module beside the task copies
+(`<job>.tasks/harbor-plugin/tdb_harbor_agents.py`), runs `harbor` with that
+directory first on `PYTHONPATH`, prints the command with that prefix so it
+can be replayed by hand, and records the copy's digest in `tdb-run.json`
+(`harbor_plugin`) next to each agent's `import_path`. The copy makes the job
+runnable whether or not Harbor shares a Python environment with tdb. A
+launch command the plugin does not recognize (a future Harbor adapter)
+fails the trial with `InstructionTransportError` instead of silently using
+the old transport; a command that no longer carries the instruction passes
+through unchanged.
+
+!!! note "Grok Build excerpts long requests on its own"
+
+    Grok Build receives the whole instruction but, for requests over about
+    100 KB, sends the model an excerpt with a note that the full request is
+    saved in its session directory and that the omitted line ranges can be
+    read with its `read_file` tool. This is the CLI's own behavior for any
+    long prompt, not the transport's; the trajectory records the excerpted
+    message. Expect Grok Build models to read the rest of a long protocol
+    with tool calls, or not at all.
 
 ## Network allowlists
 

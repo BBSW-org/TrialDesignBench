@@ -44,6 +44,13 @@ First-party harnesses expose no system prompt slot, so the template is the
 instruction preamble by design. The instruction never contains rubric text;
 the test suite checks this.
 
+The instruction has no size limit of its own: a full protocol of several
+hundred kilobytes is expected. `tdb run` delivers it to the agent through an
+uploaded file, because Harbor's own transport (one exec argument or
+environment variable) fails above 128 KiB; see
+[Run](run.md#how-the-instruction-reaches-the-agent). Model context windows
+still apply.
+
 ## task.toml
 
 - `[task] name = "trialdesignbench/<task_id>"`, version = dataset version.

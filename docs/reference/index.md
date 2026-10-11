@@ -1,7 +1,8 @@
 # API reference
 
 The core modules are importable without the CLI dependencies and never import
-Harbor.
+Harbor. The one module that does, `harbor_agents`, is a Harbor plugin: Harbor
+imports it inside its own process, and no `tdb` command does.
 
 | Module | Purpose |
 | --- | --- |
@@ -14,7 +15,8 @@ Harbor.
 | [`grade`](grade.md) | Deterministic checks, rubric judging, grade outputs |
 | [`scoring`](scoring.md) | Versioned scoring rules |
 | [`agents`](agents.md) | Supported agents: providers, credentials, hosts, closed-book settings |
-| [`run`](run.md) | `job.yaml` generation, allowlists, provenance manifest |
+| [`harbor_agents`](harbor_agents.md) | Harbor plugin: the agent classes `tdb run` launches, with a file-based instruction transport |
+| [`run`](run.md) | `job.yaml` generation, allowlists, plugin copy, provenance manifest |
 | [`canary`](canary.md) | Network canary task |
 | [`report`](report.md) | Aggregation and leaderboards |
 | [`provenance`](provenance.md) | Digests, versions, git and image identifiers |
