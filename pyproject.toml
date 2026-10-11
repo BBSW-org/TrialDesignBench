@@ -66,6 +66,11 @@ plugins = ["pydantic.mypy"]
 module = ["xai_sdk", "xai_sdk.*", "grpc", "grpc.*", "google.protobuf.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# Harbor ships no `py.typed`; only `trialdesignbench.harbor_agents` imports it.
+module = ["harbor", "harbor.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 norecursedirs = [".venv", "vendor", "deps-src", "tmp"]
@@ -79,6 +84,9 @@ dev = [
     "anthropic>=1.8.0",
     "openai>=2.54.0",
     "xai-sdk>=1.20.0",
+    # The pinned Harbor, so the agent classes in `trialdesignbench.harbor_agents`
+    # are type checked and tested against the adapters they subclass.
+    "harbor==0.23.0",
     "isort>=8.0.1",
     "mkdocstrings-python>=2.0.3",
     "mypy>=2.0.0",
