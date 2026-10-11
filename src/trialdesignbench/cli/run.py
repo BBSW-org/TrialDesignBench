@@ -113,7 +113,8 @@ def run(
     for w in plan.warnings:
         warn(w)
     console.print(f"job config: {escape(str(plan.job_yaml))}")
-    console.print(f"command: {escape(shlex.join(plan.command))}")
+    prefix = "".join(f"{k}={shlex.quote(v)} " for k, v in plan.env.items())
+    console.print(f"command: {escape(prefix + shlex.join(plan.command))}")
     if dry_run:
         return
     try:

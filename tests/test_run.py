@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import importlib.util
 import json
+import os
+import sys
 import tomllib
 from pathlib import Path
 
@@ -10,10 +13,13 @@ from tests.conftest import FIXTURE_TASK_ID
 from trialdesignbench import agents, environment
 from trialdesignbench.build import BuildOptions, build_tasks
 from trialdesignbench.judge import JUDGE_BACKENDS, JudgeBackend
+from trialdesignbench.provenance import sha256_file
 from trialdesignbench.run import (
+    PLUGIN_DIR,
     AgentRequest,
     RunError,
     fill_allowed_hosts,
+    harbor_env,
     parse_agent_pairs,
     plan_run,
     regrade_command,
@@ -89,7 +95,10 @@ def test_dry_run_job_yaml(tasks_dir: Path, tmp_path: Path, model: str) -> None:
     assert job["n_concurrent_trials"] == 2
     assert job["environment"] == {"type": "docker"}
     (agent,) = job["agents"]
-    assert agent["name"] == "claude-code"
+    # The plugin class, never Harbor's agent name (a valid name wins over
+    # import_path in Harbor's factory and would bypass the plugin).
+    assert agent["import_path"] == "tdb_harbor_agents:ClaudeCode"
+    assert "name" not in agent
     assert agent["model_name"] == model
     kwargs = agent["kwargs"]
     assert kwargs["version"] == environment.PINS.claude_code_version
@@ -107,6 +116,21 @@ def test_dry_run_job_yaml(tasks_dir: Path, tmp_path: Path, model: str) -> None:
         and "--allow-environment-host" not in p.command
     )
     assert p.command == ["harbor", "run", "-c", str(p.job_yaml)]
+
+    # The plugin is copied beside the task copies, recorded with its digest,
+    # and its directory leads PYTHONPATH for the harbor process.
+    plugin = p.manifest.harbor_plugin
+    assert plugin is not None and plugin.module == "tdb_harbor_agents"
+    plugin_path = Path(plugin.path)
+    assert plugin_path == (tmp_path / "jobs" / "j1.tasks" / PLUGIN_DIR).resolve() / (
+        "tdb_harbor_agents.py"
+    )
+    assert plugin.sha256 == sha256_file(plugin_path)
+    assert plugin_path.read_bytes() == (
+        Path(agents.__file__).with_name("harbor_agents.py").read_bytes()
+    )
+    assert p.env == {"PYTHONPATH": str(plugin_path.parent)}
+    assert p.manifest.agents[0].import_path == "tdb_harbor_agents:ClaudeCode"
 
     # Task copies live beside the job dir with the allowlist filled in.
     (task,) = job["tasks"]
@@ -277,7 +301,10 @@ def test_effort_matrix_on_one_agent(tasks_dir: Path, tmp_path: Path) -> None:
 def test_matrix_uses_host_union_with_warning(tasks_dir: Path, tmp_path: Path) -> None:
     requests = parse_agent_pairs(["claude-code", "codex"], ["anthropic/a", "openai/b"])
     p = plan(tasks_dir, tmp_path, requests)
-    assert [a["name"] for a in load_job(p)["agents"]] == ["claude-code", "codex"]
+    assert [a["import_path"] for a in load_job(p)["agents"]] == [
+        "tdb_harbor_agents:ClaudeCode",
+        "tdb_harbor_agents:Codex",
+    ]
     assert any("union" in w for w in p.warnings)
     hosts = ["api.anthropic.com", "api.openai.com"]
     assert task_policy(p) == (hosts, hosts)
@@ -522,6 +549,35 @@ def test_fill_allowed_hosts_requires_markers() -> None:
         fill_allowed_hosts(old, ["x"], ["x"])
 
 
+def test_harbor_env_prepends_plugin_dir(tasks_dir: Path, tmp_path: Path) -> None:
+    p = plan(tasks_dir, tmp_path, [AgentRequest("claude-code", "anthropic/x")])
+    plugin = p.manifest.harbor_plugin
+    assert plugin is not None
+    plugin_dir = str(Path(plugin.path).parent)
+    assert harbor_env(plugin, {}) == {"PYTHONPATH": plugin_dir}
+    assert harbor_env(plugin, {"PYTHONPATH": "/other"}) == {
+        "PYTHONPATH": f"{plugin_dir}{os.pathsep}/other"
+    }
+
+
+def test_plugin_copy_imports_standalone(
+    tasks_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The copied module is what Harbor imports: it must load on its own."""
+    pytest.importorskip("harbor.agents.installed.base", reason="harbor not installed")
+    p = plan(tasks_dir, tmp_path, [AgentRequest("opencode", "opencode-go/x")])
+    plugin = p.manifest.harbor_plugin
+    assert plugin is not None
+    monkeypatch.delitem(sys.modules, plugin.module, raising=False)
+    spec = importlib.util.spec_from_file_location(plugin.module, plugin.path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    for profile in agents.AGENTS:
+        cls = getattr(module, profile.harbor_class)
+        assert cls.name() == profile.name
+
+
 def test_regrade_command(tmp_path: Path) -> None:
     cmd = regrade_command(tmp_path / "job", tmp_path / "tasks", job_name="r1")
     assert cmd[:3] == ["harbor", "job", "regrade"]
@@ -543,7 +599,11 @@ def test_job_yaml_parses_with_harbor_jobconfig(tasks_dir: Path, tmp_path: Path) 
     ids=lambda x: x if isinstance(x, str) else getattr(x, "name", "default"),
 )
 def test_agent_kwargs_pass_harbor_preflight(
-    tasks_dir: Path, tmp_path: Path, profile: agents.AgentProfile, level: str | None
+    tasks_dir: Path,
+    tmp_path: Path,
+    profile: agents.AgentProfile,
+    level: str | None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Harbor rejects unknown or invalid kwargs before any trial starts.
 
@@ -557,6 +617,14 @@ def test_agent_kwargs_pass_harbor_preflight(
     model = f"{profile.providers[0]}/x"
     p = plan(tasks_dir, tmp_path, [AgentRequest(profile.name, model, effort=level)])
     config = harbor_config.JobConfig.model_validate(load_job(p))
+    # Harbor resolves `import_path` with a plain import: the plugin copy must
+    # be importable from the PYTHONPATH `tdb run` sets.
+    monkeypatch.syspath_prepend(p.env["PYTHONPATH"])
+    monkeypatch.delitem(sys.modules, "tdb_harbor_agents", raising=False)
+    agent_class = factory.AgentFactory.get_agent_class_from_config(config.agents[0])
+    assert agent_class.__module__ == "tdb_harbor_agents"
+    assert agent_class.__name__ == profile.harbor_class
+    assert agent_class.name() == profile.name
     factory.AgentFactory.run_preflight(config.agents[0])
     if level is not None:
         assert config.agents[0].kwargs[profile.effort.kwarg] == level

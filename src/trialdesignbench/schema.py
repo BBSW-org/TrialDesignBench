@@ -322,6 +322,23 @@ class AgentSpec(_Model):
         description="Extra hosts Harbor's install step reaches during agent "
         "setup (empty when the CLI is preinstalled in the image).",
     )
+    import_path: str | None = Field(
+        default=None,
+        description="Harbor `import_path` of the launched class "
+        "(`trialdesignbench.harbor_agents`, the adapter for `agent` with the "
+        "file-based instruction transport). None in manifests written before "
+        "tdb launched agents through the plugin.",
+    )
+
+
+class HarborPlugin(_Model):
+    """The copy of `trialdesignbench.harbor_agents` a job's `harbor` process
+    imports (`agents[].import_path` in `job.yaml`)."""
+
+    schema_version: str = SCHEMA_VERSION
+    module: str
+    path: str
+    sha256: str
 
 
 class NetworkPolicy(_Model):
@@ -366,6 +383,12 @@ class RunManifest(_Model):
     network_policy: NetworkPolicy
     repo_git_sha: str | None
     command: tuple[str, ...]
+    harbor_plugin: HarborPlugin | None = Field(
+        default=None,
+        description="Plugin the `harbor` process imports for every agent; its "
+        "directory is on PYTHONPATH when `command` runs. None in manifests "
+        "written before tdb launched agents through the plugin.",
+    )
     started_at: datetime
     finished_at: datetime | None = None
     exit_code: int | None = None
