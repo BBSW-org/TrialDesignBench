@@ -1,5 +1,15 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Maintenance
+
+- Bump the pinned Claude Code to 2.1.316 (was 2.1.295), Codex CLI to
+  0.166.0 (was 0.162.0), Grok Build to 1.0.70 (was 1.0.50), OpenCode to
+  1.19.5 (was 1.18.35), and uv to 0.13.6 (was 0.12.24). Update the local
+  Python pin to 3.14.10 (was 3.14.8) and refresh the Python dependency
+  lockfile (#149).
+
 ## trialdesignbench 1.7.0
 
 ### Bug fixes
