@@ -1,5 +1,18 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Maintenance
+
+- Bump the pinned Claude Code to 2.1.322 (was 2.1.316), Codex CLI to
+  0.167.1 (was 0.166.0), Grok Build to 1.0.77 (was 1.0.70), and uv to
+  0.13.7 (was 0.13.6), using `scripts/latest_agent_versions.py`. OpenCode
+  remains at the latest version, 1.19.5. Refresh the Python dependency
+  lockfile.
+- Document Fable 5.2 (`anthropic/claude-fable-5-2`) for Claude Code,
+  supported since 2.1.321, and update the documented Claude Code reasoning
+  effort defaults.
+
 ## trialdesignbench 1.7.1
 
 ### Maintenance
