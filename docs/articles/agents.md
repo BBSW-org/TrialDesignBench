@@ -39,12 +39,6 @@ refuses any other agent.
   instead of an exec argument, which Linux caps at 128 KiB. See
   [Run](run.md#how-the-instruction-reaches-the-agent).
 
-Claude Code supports Fable 5.2 with
-`--model anthropic/claude-fable-5-2`. It requires
-[Claude Code 2.1.321 or later](https://code.claude.com/docs/en/model-config#work-with-fable),
-which the pinned image provides. Use the full model ID to pin the model
-version for reproducible runs.
-
 Run one agent, or a matrix by repeating the pair:
 
 ```bash
@@ -57,7 +51,7 @@ uv run tdb run \
 uv run tdb run \
 	--tasks tmp/tasks \
 	--agent claude-code \
-	--model anthropic/claude-fable-5-2 \
+	--model anthropic/claude-opus-5-5 \
 	--agent grok-build \
 	--model xai/grok-4.7
 ```
