@@ -1,5 +1,15 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Maintenance
+
+- Bump the pinned Claude Code to 2.1.322 (was 2.1.316), Codex CLI to
+  0.167.1 (was 0.166.0), Grok Build to 1.0.77 (was 1.0.70), and uv to
+  0.13.7 (was 0.13.6) (#154).
+- Update the documented Claude Code reasoning effort defaults, including
+  Fable 5.2 (#154).
+
 ## trialdesignbench 1.7.1
 
 ### Maintenance

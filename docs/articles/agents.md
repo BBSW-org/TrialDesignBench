@@ -15,9 +15,9 @@ refuses any other agent.
 
 | Agent | Harness | Pinned version | Installed | `--model` providers | `--auth` |
 | --- | --- | --- | --- | --- | --- |
-| `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.316 | in the image | `anthropic` | `api`, `subscription` |
-| `codex` | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) | 0.166.0 | in the image | `openai` | `api`, `subscription` |
-| `grok-build` | [Grok Build](https://docs.x.ai/build/overview) | 1.0.70 | by Harbor at setup | `xai` | `api` |
+| `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.322 | in the image | `anthropic` | `api`, `subscription` |
+| `codex` | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) | 0.167.1 | in the image | `openai` | `api`, `subscription` |
+| `grok-build` | [Grok Build](https://docs.x.ai/build/overview) | 1.0.77 | by Harbor at setup | `xai` | `api` |
 | `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.19.5 | by Harbor at setup | `anthropic`, `openai`, `xai`, `opencode-go` | `api` |
 
 - `--model` is always `<provider>/<model>`, for example
@@ -97,12 +97,14 @@ lacks differs by agent:
   does not define, so check the catalog before a large run.
 
 Without `--effort` (or with `--effort default`) no kwarg is set and each
-harness applies its own default: Claude Code the model's default (`high` for
-most models, `medium` for Opus 5.5), Codex `medium`, Grok Build the model's
-default (`high` on `grok-4.x`), and OpenCode sends no effort, so the provider
-default applies. These defaults depend on the model and change between CLI
-versions, so `tdb run` warns when an agent runs without an explicit level,
-and `tdb report` labels such runs `default`.
+harness applies its own default. Claude Code uses the
+[model's default](https://code.claude.com/docs/en/model-config#adjust-effort-level):
+`medium` for Fable 5.2, Opus 5.5, Sonnet 5.5, and Haiku 5.5; `xhigh` for
+Opus 4.7; `high` for other models that support effort. Codex uses `medium`,
+Grok Build uses the model's default (`high` on `grok-4.x`), and OpenCode
+sends no effort, so the provider default applies. These defaults depend on
+the model and change between CLI versions, so `tdb run` warns when an agent
+runs without an explicit level, and `tdb report` labels such runs `default`.
 
 `--effort` is given once for every agent, or once per `--agent`; `default`
 is the placeholder for an agent that keeps the harness default. The same
@@ -128,9 +130,8 @@ uv run tdb run \
 	--effort default
 ```
 
-Levels are not comparable across agents or providers: `high` is Claude
-Code's default but two steps above Codex's. Compare levels within one agent
-and model, and report the level with every result.
+Levels are not comparable across agents or providers. Compare levels within
+one agent and model, and report the level with every result.
 
 ## Authentication
 
