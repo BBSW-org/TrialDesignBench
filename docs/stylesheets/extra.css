@@ -19,7 +19,7 @@
 @font-face {
     font-display: swap;
     font-family: "Ergonomic Mono";
-    src: url("../assets/ErgonomicMono-Regular.woff2") format("woff2");
+    src: url("../assets/ErgonomicMono-Retina.woff2") format("woff2");
     font-weight: 400;
     font-style: normal;
     font-feature-settings: "ss02", "ss03";
