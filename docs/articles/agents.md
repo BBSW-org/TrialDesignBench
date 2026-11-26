@@ -15,10 +15,10 @@ refuses any other agent.
 
 | Agent | Harness | Pinned version | Installed | `--model` providers | `--auth` |
 | --- | --- | --- | --- | --- | --- |
-| `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.322 | in the image | `anthropic` | `api`, `subscription` |
-| `codex` | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) | 0.167.1 | in the image | `openai` | `api`, `subscription` |
-| `grok-build` | [Grok Build](https://docs.x.ai/build/overview) | 1.0.77 | by Harbor at setup | `xai` | `api` |
-| `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.19.5 | by Harbor at setup | `anthropic`, `openai`, `xai`, `opencode-go` | `api` |
+| `claude-code` | [Claude Code](https://code.claude.com/docs) | 2.1.332 | in the image | `anthropic` | `api`, `subscription` |
+| `codex` | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) | 0.172.0 | in the image | `openai` | `api`, `subscription` |
+| `grok-build` | [Grok Build](https://docs.x.ai/build/overview) | 1.0.92 | by Harbor at setup | `xai` | `api` |
+| `opencode` | [OpenCode](https://opencode.ai/docs/) | 1.19.6 | by Harbor at setup | `anthropic`, `openai`, `xai`, `opencode-go` | `api` |
 
 - `--model` is always `<provider>/<model>`, for example
   `anthropic/claude-opus-5-5`, `openai/gpt-6-astra`, `xai/grok-4.7`, or
