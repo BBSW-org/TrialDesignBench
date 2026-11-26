@@ -1,5 +1,13 @@
 # Changelog
 
+## trialdesignbench (development version)
+
+### Maintenance
+
+- Bump the pinned Claude Code to 2.1.332 (was 2.1.322), Codex CLI to
+  0.172.0 (was 0.167.1), Grok Build to 1.0.92 (was 1.0.77), OpenCode to
+  1.19.6 (was 1.19.5), and uv to 0.13.10 (was 0.13.7) (#159).
+
 ## trialdesignbench 1.7.2
 
 ### Maintenance
